@@ -255,22 +255,6 @@
     title.textContent = '调试菜单'
     setStyle(title, { fontSize: '16px', fontWeight: 'bold', color: '#ff88cc' })
     header.appendChild(title)
-    function tryHideDebugMenu() {
-      if (storageModified) {
-        Swal.fire({
-          html: '已修改存储数据，需要刷新页面才能使更改生效，否则继续游戏可能会覆盖修改。<br>确定要刷新页面吗？<br>（取消可继续留在调试菜单）',
-          icon: 'warning',
-          showCancelButton: true,
-        }).then(function (result) {
-          if (result.isConfirmed) {
-            location.reload()
-          }
-        })
-        return
-      }
-      hideDebugMenu()
-    }
-
     header.appendChild(createButton('关闭', tryHideDebugMenu))
     container.appendChild(header)
 
@@ -817,6 +801,22 @@
       container.style.display = 'flex'
       if (NS.reloadDebugMenu) NS.reloadDebugMenu()
     }
+  }
+
+  function tryHideDebugMenu() {
+    if (storageModified) {
+      Swal.fire({
+        html: '已修改存储数据，需要刷新页面才能使更改生效，否则继续游戏可能会覆盖修改。<br>确定要刷新页面吗？<br>（取消可继续留在调试菜单）',
+        icon: 'warning',
+        showCancelButton: true,
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          location.reload()
+        }
+      })
+      return
+    }
+    hideDebugMenu()
   }
 
   function hideDebugMenu() {

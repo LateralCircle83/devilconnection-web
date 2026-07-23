@@ -1,0 +1,42 @@
+[
+    {
+        "id": "dc_modworkshop",
+        "name": "DCML 模组工坊",
+        "description": "模组管理界面与工坊商店",
+        "file": "dc_modworkshop.asar",
+        "version": "1.0.0",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_kupya_plus",
+        "name": "库皮亚交互增强",
+        "description": "后日谈的库皮亚新增一些台词；收藏室书架上必定出现小憩的库皮亚，且可以互动",
+        "file": "dc_kupya_plus.asar",
+        "version": "1.2.0",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_theatre",
+        "name": "库啪哒呀小剧场",
+        "description": "登上小剧场舞台，与库皮亚和德比伦即兴聊天互动！",
+        "file": "dc_theatre.asar",
+        "version": "1.2.2",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_doeru_plus",
+        "name": "更多二世多艾露",
+        "description": "第一周目连结佩恩时为其装备恶魔之翼，即可激活二世多艾露的专属剧情，由多艾尔替代库皮亚登场! (剧本原作者Bob69693)",
+        "file": "dc_doeru_plus.asar",
+        "version": "1.0.3",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_toolbox",
+        "name": "DC Toolbox",
+        "description": "游戏内实时修改工具：收集解锁、数值编辑、路线开关、游戏变速与成就补发",
+        "file": "dc_toolbox.asar",
+        "version": "1.0.1",
+        "author": "https://github.com/Luoyu-Wangchai"
+    }
+]

@@ -1,6 +1,6 @@
 //ティラノビルダーによる自動ビルド　
 ;global.config_version=5.00
-;System.title=恶魔连结 | Web版本 by GeekPigeon
+;System.title=恶魔连结 | Web版本forked from GeekPigeon
 ;projectID=DevilConnection
 ;game_version=0.0
 ;ScreenRatio=fix

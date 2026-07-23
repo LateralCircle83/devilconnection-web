@@ -106,6 +106,10 @@
     <script src="./tyrano/libs/jsQR.js"></script>
     <script src="./tyrano/libs/lz-string.min.js"></script>
 
+    <!-- Mod compatibility & loader -->
+    <script src="./mod_compat.js"></script>
+    <script src="./mod_loader.js"></script>
+
     <!-- Electron対応 -->
     <script src="./electron_latest.js"></script>
   </head>
@@ -115,7 +119,7 @@
     onContextmenu="return false"
     ontouchmove="event.preventDefault()"
   >
-    <!-- クリックして開始（オーディオ自動再生ポリシー対策） -->
+    <!-- 模组选择 + 开始（オーディオ自動再生ポリシー対策） -->
     <div
       id="tyrano_click_to_start"
       style="
@@ -126,38 +130,91 @@
         height: 100vh;
         z-index: 2147483647;
         background: rgba(0, 0, 0, 0.92);
-        cursor: pointer;
         user-select: none;
         -webkit-user-select: none;
       "
     >
       <div
-        id="tyrano_click_button"
+        id="mod_selector"
         style="
           position: absolute;
           left: 50%;
           top: 50%;
           transform: translate(-50%, -50%);
-          max-width: 90vw;
-          max-height: 90vh;
-          padding: 36px 72px;
-          border: 3px solid rgba(255, 255, 255, 0.8);
+          width: min(600px, 90vw);
+          max-height: 80vh;
+          padding: 32px 40px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
           border-radius: 16px;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.06);
           color: #fff;
-          font-size: clamp(24px, 5vw, 48px);
           font-family: sans-serif;
           text-align: center;
-          line-height: 1.4;
-          box-shadow: 0 0 40px rgba(255, 136, 204, 0.3);
-          transition: all 0.25s ease;
           box-sizing: border-box;
-          overflow: hidden;
+          overflow-y: auto;
+          cursor: default;
+          touch-action: pan-y;
         "
+        onclick="event.stopPropagation()"
+        ontouchmove="event.stopPropagation()"
       >
-        <div>点击屏幕开始</div>
-        <div style="font-size: 0.45em; opacity: 0.7; margin-top: 0.5em">
-          Click to Start
+        <div style="font-size: 28px; margin-bottom: 8px; font-weight: bold;">
+          恶魔连结 · 浏览器版
+        </div>
+        <div style="font-size: 14px; opacity: 0.6; margin-bottom: 4px;">
+          DevilConnection Web Port
+        </div>
+        <div style="font-size: 11px; opacity: 0.35; margin-bottom: 24px;">
+          Forked from lllhhh2282/devilconnection-web
+        </div>
+
+        <!-- 模组列表 -->
+        <div id="mod_list" style="text-align: left; margin-bottom: 24px; min-height: 60px;">
+          <div style="text-align: center; opacity: 0.5; padding: 20px;">
+            加载模组列表中...
+          </div>
+        </div>
+
+        <!-- 开始按钮 -->
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button
+            id="start_game_btn"
+            style="
+              padding: 14px 56px;
+              border: 2px solid rgba(255, 136, 204, 0.6);
+              border-radius: 12px;
+              background: rgba(255, 136, 204, 0.15);
+              color: #fff;
+              font-size: 20px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            "
+            onmouseover="this.style.background='rgba(255,136,204,0.3)'"
+            onmouseout="this.style.background='rgba(255,136,204,0.15)'"
+          >
+            开始游戏
+          </button>
+          <button
+            id="load_local_btn"
+            style="
+              padding: 14px 24px;
+              border: 1px solid rgba(255,255,255,0.2);
+              border-radius: 12px;
+              background: rgba(255,255,255,0.06);
+              color: #fff;
+              font-size: 14px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            "
+            onmouseover="this.style.background='rgba(255,255,255,0.15)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.06)'"
+          >
+            + 加载本地 ASAR
+          </button>
+          <input id="asar_file_input" type="file" accept=".asar" style="display:none">
+        </div>
+        <div style="font-size: 12px; opacity: 0.4; margin-top: 16px;">
+          点击开始即表示同意模组加载与资源替换
         </div>
       </div>
     </div>
@@ -203,5 +260,291 @@
         Cancel
       </button>
     </div>
+
+    <!-- 模组配置弹窗模板 -->
+    <div id="mod_config_modal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2147483647;background:rgba(0,0,0,0.7);align-items:center;justify-content:center;font-family:sans-serif;color:#fff;touch-action:pan-y;" onclick="if(event.target===this)closeModConfig()" ontouchmove="event.stopPropagation()">
+      <div style="background:rgba(24,16,38,0.98);border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:24px 28px;width:min(460px,90vw);max-height:80vh;overflow-y:auto;text-align:left;touch-action:pan-y;" onclick="event.stopPropagation()" ontouchmove="event.stopPropagation()">
+        <div id="mod_config_title" style="font-size:18px;font-weight:bold;margin-bottom:16px;"></div>
+        <div id="mod_config_fields"></div>
+        <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
+          <button onclick="closeModConfig()" style="padding:8px 20px;border:1px solid rgba(255,255,255,0.3);border-radius:8px;background:transparent;color:#fff;font-size:14px;cursor:pointer;">取消</button>
+          <button onclick="saveModConfig()" style="padding:8px 20px;border:1px solid rgba(255,136,204,0.5);border-radius:8px;background:rgba(255,136,204,0.15);color:#fff;font-size:14px;cursor:pointer;">保存配置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 模组选择逻辑 -->
+    <script>
+      var _cfgModId = null, _cfgSchema = null
+
+      function openModConfig(modId, modName) {
+        _cfgModId = modId
+        document.getElementById('mod_config_title').textContent = modName + ' 配置'
+        var fieldsEl = document.getElementById('mod_config_fields')
+        fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">读取配置中...</div>'
+        document.getElementById('mod_config_modal').style.display = 'flex'
+
+        // Try reading config.schema.json from ASAR
+        var modEntry = _modList ? _modList.find(function(m) { return m.id === modId }) : null
+        if (!modEntry) { fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">模组信息缺失</div>'; return }
+
+        // Local mod: read config.schema.json from its specific ASAR
+        if (modEntry.isLocal) {
+          var s = (window.ModLoader && ModLoader.getAsarFileJSON) ? ModLoader.getAsarFileJSON(modEntry.asarIdx, 'config.schema.json') : null
+          if (s) { renderConfigForm(s); return }
+          fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">该模组无可配置项</div>'
+          return
+        }
+
+        // Fetch ASAR and extract config.schema.json from its header
+        fetch('./mods/' + modEntry.file).then(function(r) {
+          if (!r.ok) throw new Error('fetch failed: ' + r.status)
+          return r.arrayBuffer()
+        }).then(function(buf) {
+          var view = new Uint8Array(buf)
+          var bracePos = -1
+          for (var i = 0; i < 2048 && i < view.length; i++) {
+            if (view[i] === 0x7b) { bracePos = i; break }
+          }
+          if (bracePos === -1) throw new Error('JSON { not found')
+          var depth = 0, endPos = -1
+          for (var i = bracePos; i < view.length; i++) {
+            if (view[i] === 0x7b) depth++
+            if (view[i] === 0x7d) { depth--; if (depth === 0) { endPos = i; break } }
+          }
+          if (endPos === -1) throw new Error('JSON } not found')
+          var dec = new TextDecoder('utf-8')
+          var headerJson = dec.decode(new Uint8Array(buf, bracePos, endPos - bracePos + 1))
+          var header = JSON.parse(headerJson)
+
+          var schemaOffset = null, schemaSize = null
+          function findFile(tree, prefix) {
+            if (!tree || !tree.files) return
+            for (var name in tree.files) {
+              var entry = tree.files[name]
+              var path = prefix ? prefix + '/' + name : name
+              if (entry.files) { findFile(entry, path) }
+              else if (path === 'config.schema.json' || path === '/config.schema.json') {
+                schemaOffset = parseInt(entry.offset, 10)
+                schemaSize = parseInt(entry.size, 10)
+                return
+              }
+            }
+          }
+          findFile(header, '')
+          if (schemaOffset === null) throw new Error('config.schema.json not in ASAR')
+
+          var dOff = endPos + 1
+          while (dOff < view.length && (view[dOff] === 0 || view[dOff] === 10 || view[dOff] === 13)) dOff++
+          var schemaBytes = new Uint8Array(buf, dOff + schemaOffset, schemaSize)
+          var schemaText = dec.decode(schemaBytes)
+          var schema = JSON.parse(schemaText)
+          renderConfigForm(schema)
+        }).catch(function(e) {
+          console.warn('ModLoader: config load error', e)
+          fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">该模组无可配置项</div>'
+        })
+      }
+
+      function renderConfigForm(schema) {
+        _cfgSchema = schema
+        var fieldsEl = document.getElementById('mod_config_fields')
+        if (!schema || !schema.fields || !schema.fields.length) {
+          fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">无可配置项</div>'
+          return
+        }
+        if (schema.description) {
+          fieldsEl.innerHTML = '<div style="font-size:12px;opacity:0.6;margin-bottom:14px;">' + esc(schema.description) + '</div>'
+        } else {
+          fieldsEl.innerHTML = ''
+        }
+        var saved = {}
+        try { saved = JSON.parse(localStorage.getItem('mod_config_' + _cfgModId)) || {} } catch(e) {}
+
+        for (var i = 0; i < schema.fields.length; i++) {
+          var f = schema.fields[i]
+          var val = saved[f.key] !== undefined ? saved[f.key] : f.default
+          var inputId = 'cfg_' + f.key
+          fieldsEl.innerHTML += '<div style="margin-bottom:12px;">' +
+            '<label for="' + inputId + '" style="display:block;font-size:13px;margin-bottom:4px;opacity:0.8;">' + esc(f.label || f.key) + '</label>'
+
+          if (f.type === 'toggle') {
+            fieldsEl.innerHTML +=
+              '<input type="checkbox" id="' + inputId + '" ' + (val ? 'checked' : '') + ' style="width:20px;height:20px;accent-color:#ff88cc;">'
+          } else if (f.type === 'number') {
+            fieldsEl.innerHTML +=
+              '<input type="number" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,0,0,0.3);color:#fff;font-size:14px;box-sizing:border-box;">'
+          } else if (f.type === 'password') {
+            fieldsEl.innerHTML +=
+              '<input type="password" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,0,0,0.3);color:#fff;font-size:14px;box-sizing:border-box;">'
+          } else {
+            fieldsEl.innerHTML +=
+              '<input type="text" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:rgba(0,0,0,0.3);color:#fff;font-size:14px;box-sizing:border-box;">'
+          }
+
+          if (f.help) {
+            fieldsEl.innerHTML += '<div style="font-size:11px;opacity:0.4;margin-top:3px;">' + esc(f.help) + '</div>'
+          }
+          fieldsEl.innerHTML += '</div>'
+        }
+      }
+
+      function saveModConfig() {
+        if (!_cfgSchema || !_cfgModId) return
+        var obj = {}
+        for (var i = 0; i < _cfgSchema.fields.length; i++) {
+          var f = _cfgSchema.fields[i]
+          var inputId = 'cfg_' + f.key
+          var el = document.getElementById(inputId)
+          if (!el) continue
+          if (f.type === 'toggle') {
+            obj[f.key] = el.checked
+          } else if (f.type === 'number') {
+            obj[f.key] = parseFloat(el.value) || 0
+          } else {
+            obj[f.key] = el.value
+          }
+        }
+        localStorage.setItem('mod_config_' + _cfgModId, JSON.stringify(obj))
+        alert('配置已保存')
+        closeModConfig()
+      }
+
+      function closeModConfig() {
+        document.getElementById('mod_config_modal').style.display = 'none'
+        _cfgModId = null
+        _cfgSchema = null
+      }
+
+      var _modList = []
+
+      function esc(s) {
+        if (!s) return ''
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var modListEl = document.getElementById('mod_list')
+        var startBtn = document.getElementById('start_game_btn')
+        var overlay = document.getElementById('tyrano_click_to_start')
+
+        function renderModList(mods) {
+          _modList = mods || []
+          if (!mods || mods.length === 0) {
+            modListEl.innerHTML =
+              '<div style="text-align:center;opacity:0.5;padding:20px;">没有可用模组，直接开始游戏</div>'
+            return
+          }
+          var html = '<div style="margin-bottom:8px;opacity:0.7;font-size:13px;">选择要加载的模组(不完全支持DCML)：</div>'
+          for (var i = 0; i < mods.length; i++) {
+            var m = mods[i]
+            html +=
+              '<div style="display:flex;align-items:center;padding:8px 12px;margin:4px 0;border-radius:8px;background:rgba(255,255,255,0.04);transition:background 0.15s;"' +
+              ' onmouseover="this.style.background=\'rgba(255,255,255,0.1)\'"' +
+              ' onmouseout="this.style.background=\'rgba(255,255,255,0.04)\'">' +
+              '<input type="checkbox" class="mod_checkbox" data-id="' + m.id + '" checked style="width:18px;height:18px;margin-right:12px;accent-color:#ff88cc;flex-shrink:0;">' +
+              '<div style="flex:1;min-width:0;">' +
+              '<div style="font-size:15px;font-weight:bold;">' + esc(m.name) + '</div>' +
+              (m.description ? '<div style="font-size:12px;opacity:0.5;margin-top:2px;">' + esc(m.description) + '</div>' : '') +
+              (m.author ? '<div style="font-size:11px;opacity:0.35;margin-top:1px;">by ' + esc(m.author) + '</div>' : '') +
+              (m.isLocal ? '<span style="font-size:10px;opacity:0.4;margin-left:6px;">[本地]</span>' : '') +
+              (m.isLocal ? '' : '<span style="font-size:10px;opacity:0.35;margin-left:6px;">DCML</span>') +
+              '</div>' +
+              '<button onclick="openModConfig(\'' + m.id + '\',\'' + esc(m.name) + '\');event.stopPropagation()" style="padding:4px 12px;border:1px solid rgba(255,255,255,0.2);border-radius:6px;background:transparent;color:rgba(255,255,255,0.6);font-size:12px;cursor:pointer;flex-shrink:0;transition:all 0.15s;"' +
+              ' onmouseover="this.style.borderColor=\'rgba(255,136,204,0.5)\';this.style.color=\'#fff\'"' +
+              ' onmouseout="this.style.borderColor=\'rgba(255,255,255,0.2)\';this.style.color=\'rgba(255,255,255,0.6)\'">⚙ 配置</button>' +
+              '</div>'
+          }
+          modListEl.innerHTML = html
+        }
+
+        function startGame(e) {
+          if (e) e.stopPropagation()
+          startBtn.disabled = true
+          startBtn.textContent = '加载中...'
+          startBtn.style.opacity = '0.5'
+
+          var checkboxes = document.querySelectorAll('.mod_checkbox:checked')
+          var selectedIds = []
+          for (var i = 0; i < checkboxes.length; i++) {
+            selectedIds.push(checkboxes[i].getAttribute('data-id'))
+          }
+
+          if (window.ModLoader) {
+            ModLoader.init(selectedIds).then(function () {
+              finishStart()
+            }).catch(function (err) {
+              console.warn('Mod init error, starting anyway:', err)
+              finishStart()
+            })
+          } else {
+            console.warn('ModLoader not available')
+            finishStart()
+          }
+        }
+
+        function finishStart() {
+          try {
+            var silent = new Audio('./tyrano/audio/silent.mp3')
+            silent.volume = 0.01
+            silent.play().catch(function () {})
+          } catch (e) {}
+          if (Howler && Howler.ctx && Howler.ctx.state === 'suspended') {
+            Howler.ctx.resume().catch(function () {})
+          }
+          overlay.style.transition = 'opacity 0.4s ease'
+          overlay.style.opacity = '0'
+          setTimeout(function () {
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+            if (window.TYRANO && TYRANO.init) {
+              TYRANO.init()
+            }
+          }, 400)
+        }
+
+        if (window.ModLoader) {
+          ModLoader.getModList().then(function (mods) {
+            renderModList(mods)
+          }).catch(function () {
+            renderModList([])
+          })
+        } else {
+          renderModList([])
+        }
+
+        startBtn.addEventListener('click', startGame)
+
+        // Local ASAR loading
+        var fileInput = document.getElementById('asar_file_input')
+        var loadBtn = document.getElementById('load_local_btn')
+        loadBtn.addEventListener('click', function (e) {
+          e.stopPropagation()
+          fileInput.click()
+        })
+        fileInput.addEventListener('change', function (e) {
+          var file = e.target.files && e.target.files[0]
+          if (!file) return
+          var reader = new FileReader()
+          reader.onload = function (ev) {
+            var buf = ev.target.result
+            if (window.ModLoader) {
+              var result = ModLoader.parseAndIndex(buf)
+              if (!result) { console.warn('ModLoader: failed to parse local ASAR'); return }
+              var meta = result.meta || {}
+              var name = meta.name || file.name.replace(/\.asar$/, '')
+              var localId = meta.id || ('_local_' + file.name.replace(/\.asar$/, '').replace(/[^a-zA-Z0-9_]/g, '_'))
+              _modList.push({ id: localId, name: name, description: (meta && meta.description) || '本地加载的 ASAR 模组', author: '', isLocal: true, asarIdx: result.asarIdx })
+              renderModList(_modList)
+              // Auto-check the newly added mod
+              var cbs = document.querySelectorAll('.mod_checkbox')
+              if (cbs.length) cbs[cbs.length - 1].checked = true
+              console.log('ModLoader: loaded local ASAR', file.name)
+            }
+          }
+          reader.readAsArrayBuffer(file)
+          fileInput.value = ''
+        })
+      })
+    </script>
   </body>
 </html>

@@ -1,9 +1,11 @@
-onmessage = e => {
-  const blob = e.data
-  loadAPNGForWorker(blob).then(apngBlob => {
-    postMessage(apngBlob)
-    close()
-  })
+if (typeof importScripts !== 'undefined') {
+  onmessage = e => {
+    const blob = e.data
+    loadAPNGForWorker(blob).then(apngBlob => {
+      postMessage(apngBlob)
+      close()
+    })
+  }
 }
 
 function loadAPNG(blob) {

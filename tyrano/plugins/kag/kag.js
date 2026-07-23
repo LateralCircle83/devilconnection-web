@@ -977,7 +977,6 @@ tyrano.plugin.kag = {
       })
   },
   prefetchScenarios: function (tag_obj) {
-    // 現在のシナリオから [jump]/[call] で参照されるシナリオを事前にキャッシュへ読み込む
     if (!tag_obj || !tag_obj.length) return
     var that = this,
       seen = {}
@@ -986,15 +985,24 @@ tyrano.plugin.kag = {
       if ('jump' != tag.name && 'call' != tag.name) continue
       var storage = tag.pm && tag.pm.storage
       if (!storage || seen[storage]) continue
+      if (typeof storage == 'string' && (storage.indexOf('&') === 0 || storage.indexOf('%') === 0)) continue
       seen[storage] = !0
       var url = $.isHTTP(storage) ? storage : './data/scenario/' + storage
       if (!that.cache_scenario[url]) {
         ;(function (u) {
-          $.loadText(u, function (text_str) {
-            try {
-              that.cache_scenario[u] = that.parser.parseScenario(text_str)
-            } catch (e) {}
-          })
+          fetch(u)
+            .then(function (r) {
+              if (!r.ok) return ''
+              return r.text()
+            })
+            .then(function (text_str) {
+              if (text_str) {
+                try {
+                  that.cache_scenario[u] = that.parser.parseScenario(text_str)
+                } catch (e) {}
+              }
+            })
+            .catch(function () {})
         })(url)
       }
     }
