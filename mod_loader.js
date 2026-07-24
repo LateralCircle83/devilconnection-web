@@ -106,6 +106,7 @@
 
   var loadedAsars = []
   var fileIndex = new Map()
+  var debug = window.__MOD_DEBUG__
   var blobURLCache = {}
 
   function readFileData(path) {
@@ -162,7 +163,7 @@
           configurable: true
         })
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: img interceptor failed', e) }
   }
 
   function wireInterceptors() {
@@ -185,7 +186,7 @@
         }
         return _origXHROpen.apply(this, arguments)
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: XHR override failed', e) }
 
     // Global fetch override — catches any fetch() call by engine or hooks
     try {
@@ -206,7 +207,7 @@
         }
         return _origFetch.call(window, input, init)
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: fetch override failed', e) }
 
     var _origLoadText = $.loadText
     $.loadText = function (path, cb) {
@@ -245,7 +246,7 @@
         }
         return _origCss.apply(this, arguments)
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: jQuery css override failed', e) }
 
     // Intercept setAttribute('src', ...) for img elements (jQuery.attr uses this)
     try {
@@ -260,7 +261,7 @@
         }
         _origSetAttr.call(this, attr, value)
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: setAttribute override failed', e) }
 
     // Intercept CSS setProperty for background-image
     try {
@@ -274,7 +275,7 @@
         }
         _origSetProp.call(this, prop, value)
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: CSS setProperty override failed', e) }
 
     // Intercept new Audio(url) for mod-created audio
     try {
@@ -287,7 +288,7 @@
         var a = new _origAudio(src)
         return a
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: Audio override failed', e) }
 
     // Intercept img src via document.createElement, Image(), and innerHTML
     try {
@@ -320,7 +321,7 @@
           },
         })
       }
-    } catch (e) {}
+    } catch (e) { if (debug) console.warn('ModLoader: createElement/Image/innerHTML override failed', e) }
   }
 
   function tryResolveURL(url) {
@@ -378,7 +379,7 @@
           var metaBytes = new Uint8Array(parsed.buffer, parsed.dataOffset + metaEntry.offset, metaEntry.size)
           var metaText = new TextDecoder('utf-8').decode(metaBytes)
           meta = JSON.parse(metaText)
-        } catch (e) {}
+        } catch (e) { console.warn('ModLoader: failed to parse mod meta', e) }
       }
       return { meta: meta, asarIdx: idx }
     },
@@ -454,7 +455,7 @@
       } catch (e) { return null }
     },
     setModConfig: function (modId, data) {
-      try { localStorage.setItem('mod_config_' + modId, JSON.stringify(data)) } catch (e) {}
+      try { localStorage.setItem('mod_config_' + modId, JSON.stringify(data)) } catch (e) { console.warn('ModLoader: failed to save mod config', e) }
     },
 
     // Get mod list with config.schema.json flag
