@@ -1310,6 +1310,15 @@
     $('.remodal').find('.remodal-cancel').text(text_cancel).show()
     $('.remodal').find('.remodal-confirm').text(text_ok).show()
 
+    // Fit wrapper to visual viewport so centering accounts for mobile browser chrome
+    $('.remodal-wrapper').css('height', window.innerHeight + 'px')
+    // Wrap in game-scale layer, centered via translate (avoid layout-box centering mismatch)
+    $('.remodal-scaled').children().unwrap()
+    var scale = (TYRANO && TYRANO.kag && TYRANO.kag.tmp && TYRANO.kag.tmp.base_scale) || 1
+    $('.remodal').wrap(
+      '<div class="remodal-scaled" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(' + scale + ')">'
+    )
+
     var inst = $('[data-remodal-id=modal]').remodal()
     inst.open()
 
@@ -1336,6 +1345,12 @@
       if (typeof cb_cancel == 'function') {
         cb_cancel()
       }
+    })
+
+    // Remove scale wrapper after closing animation completes, regardless of reason
+    $('.remodal').off('.remScale').on('closed.remScale', function () {
+      $('.remodal-scaled').children().unwrap()
+      $('.remodal-wrapper').css('height', '')
     })
 
     /*

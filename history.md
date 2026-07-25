@@ -69,3 +69,15 @@
 
 ### 模组打包
 - 将 `dc_theatre` 解包目录重新打包为 `dc_theatre.asar`（1.39 MB）
+
+## 2026-07-25
+
+### 改进：Remodal 对话框随游戏画面等比缩放
+- `libs.js` — 打开弹窗前将 `.remodal` 用 `.remodal-scaled` 包裹，应用 `transform: scale(base_scale)`，使弹窗与游戏画面同比例缩放
+- 居中方式从 `vertical-align:middle` 改为 `position:absolute; left:50%; top:50%; translate(-50%,-50%)`，避免布局盒子与缩放视觉的中心错位
+- 弹窗打开时 `.remodal-wrapper` 高度设为 `window.innerHeight`，关闭时还原，解决移动端浏览器地址栏导致的居中偏移
+- 缩放层在 `closed` 事件（关闭动画完成后）自动 unwrap，不影响下次打开
+
+### 改进：mod_loader 空 catch 增加调试日志
+- 为 `wireInterceptors` 中 8 处拦截器 patch 添加 `window.__MOD_DEBUG__` 保护的调试日志
+- `parseAndIndex` 元数据解析失败和 `setModConfig` 写入失败时输出 `console.warn`
