@@ -248,11 +248,18 @@
       }
     } catch (e) { if (debug) console.warn('ModLoader: jQuery css override failed', e) }
 
-    // Intercept setAttribute('src', ...) for img elements (jQuery.attr uses this)
+    // Intercept setAttribute for img/video/script src and link href
     try {
       var _origSetAttr = Element.prototype.setAttribute
       Element.prototype.setAttribute = function (attr, value) {
-        if (attr === 'src' && (this.tagName === 'IMG' || this instanceof HTMLImageElement)) {
+        if (attr === 'src' && (this.tagName === 'IMG' || this instanceof HTMLImageElement || this.tagName === 'VIDEO' || this instanceof HTMLVideoElement || this.tagName === 'SCRIPT' || this instanceof HTMLScriptElement)) {
+          if (typeof value === 'string') {
+            var blob = createBlobURL(value) || createBlobURL(normalizePath(value))
+            if (!blob) blob = createBlobURL(normalizePath(value).replace(/^data\//, './data/'))
+            if (blob) { _origSetAttr.call(this, attr, blob); return }
+          }
+        }
+        if (attr === 'href' && (this.tagName === 'LINK' || this instanceof HTMLLinkElement)) {
           if (typeof value === 'string') {
             var blob = createBlobURL(value) || createBlobURL(normalizePath(value))
             if (!blob) blob = createBlobURL(normalizePath(value).replace(/^data\//, './data/'))
@@ -290,12 +297,85 @@
       }
     } catch (e) { if (debug) console.warn('ModLoader: Audio override failed', e) }
 
+    // Wire video.src for mod file interception
+    function wireVideoInterceptor(el) {
+      try {
+        var proto = el
+        while (proto) {
+          var desc = Object.getOwnPropertyDescriptor(proto, 'src')
+          if (desc && desc.set) break
+          proto = Object.getPrototypeOf(proto)
+        }
+        if (desc && desc.set) {
+          Object.defineProperty(el, 'src', {
+            get: desc.get,
+            set: function (v) {
+              if (typeof v === 'string') {
+                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                if (blob) { desc.set.call(this, blob); return }
+              }
+              desc.set.call(this, v)
+            },
+            configurable: true
+          })
+        }
+      } catch (e) { if (debug) console.warn('ModLoader: video interceptor failed', e) }
+    }
+
+    // Wire script.src for mod file interception
+    function wireScriptInterceptor(el) {
+      try {
+        var proto = el
+        while (proto) {
+          var desc = Object.getOwnPropertyDescriptor(proto, 'src')
+          if (desc && desc.set) break
+          proto = Object.getPrototypeOf(proto)
+        }
+        if (desc && desc.set) {
+          Object.defineProperty(el, 'src', {
+            get: desc.get,
+            set: function (v) {
+              if (typeof v === 'string') {
+                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                if (blob) { desc.set.call(this, blob); return }
+              }
+              desc.set.call(this, v)
+            },
+            configurable: true
+          })
+        }
+      } catch (e) { if (debug) console.warn('ModLoader: script interceptor failed', e) }
+    }
+
+    // Wire link.href for mod file interception
+    function wireLinkInterceptor(el) {
+      try {
+        var desc = Object.getOwnPropertyDescriptor(HTMLLinkElement.prototype, 'href')
+        if (desc && desc.set) {
+          Object.defineProperty(el, 'href', {
+            get: desc.get,
+            set: function (v) {
+              if (typeof v === 'string') {
+                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                if (blob) { desc.set.call(this, blob); return }
+              }
+              desc.set.call(this, v)
+            },
+            configurable: true
+          })
+        }
+      } catch (e) { if (debug) console.warn('ModLoader: link interceptor failed', e) }
+    }
+
     // Intercept img src via document.createElement, Image(), and innerHTML
     try {
       var _origCreate = document.createElement
       document.createElement = function (tag, opt) {
         var el = _origCreate.call(document, tag, opt)
         if ((tag || '').toLowerCase() === 'img') wireImgInterceptor(el)
+        else if ((tag || '').toLowerCase() === 'video') wireVideoInterceptor(el)
+        else if ((tag || '').toLowerCase() === 'script') wireScriptInterceptor(el)
+        else if ((tag || '').toLowerCase() === 'link') wireLinkInterceptor(el)
         return el
       }
       var _origImage = window.Image

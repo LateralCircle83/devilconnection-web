@@ -38,5 +38,20 @@
         "file": "dc_toolbox.asar",
         "version": "1.0.1",
         "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_mind_voice",
+        "name": "心声助手",
+        "description": "角色心声弹窗提示：当角色触发心声时在右上角显示 toast 通知",
+        "file": "dc_mind_voice.asar",
+        "version": "1.0.0",
+        "author": "移植自 心声助手.asar"
+    },
+    {
+        "id": "test_all",
+        "name": "全面拦截测试",
+        "description": "测试 mod_loader 所有 13 种拦截器",
+        "file": "test_all.asar",
+        "version": 100
     }
 ]

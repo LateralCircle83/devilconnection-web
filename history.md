@@ -102,3 +102,13 @@
 ### 模组加载器
 - 模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)
 - 支持正版游戏《恶魔连结》(DevilConnection)，请通过 Steam 等正规渠道购买游戏
+
+## 2026-07-26（后续）
+
+### 新增：资源拦截扩展
+- `setAttribute`：VIDEO/SCRIPT 的 `src` 和 LINK 的 `href` 加入拦截
+- `wireVideoInterceptor`：拦截 `video.src = url` 直接属性赋值
+- `wireScriptInterceptor`：拦截 `script.src = url`
+- `wireLinkInterceptor`：拦截 `link.href = url`
+- `createElement`：video/script/link 创建时绑定对应拦截器
+- 至此 mod_loader 支持拦截所有主流资源加载方式：img、video、audio、script、link、fetch、XHR、CSS
