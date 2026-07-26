@@ -81,3 +81,24 @@
 ### 改进：mod_loader 空 catch 增加调试日志
 - 为 `wireInterceptors` 中 8 处拦截器 patch 添加 `window.__MOD_DEBUG__` 保护的调试日志
 - `parseAndIndex` 元数据解析失败和 `setModConfig` 写入失败时输出 `console.warn`
+
+## 2026-07-26
+
+### 新增：简体中文汉化资源
+- 替换 `data/scenario/` 全部 100+ 个剧本文件为简体中文翻译版
+- 替换 `data/scenario/system/` 全部系统剧本为简体中文翻译版
+- 替换 `data/video/*.mp4`（7 个）为汉化版标题/开场/结局视频
+- 替换 `data/bgimage/`、`data/fgimage/`、`data/image/` 相关汉化媒体资源
+- 替换 `data/others/` 中文字体及适配 JS 插件
+- 替换 `tyrano/lang.js` 汉化文本串
+- 替换 `logo.png` 汉化版 Logo
+- 汉化来源：古今狐白日语社《恶魔连结》Ver1.01 汉化补丁
+
+### 适配：汉化资源配置调整
+- `data/system/Config.tjs`：保留移植版 `configSave=webstorage`（汉化合集原为 `file`）
+- `data/scenario/title_screen.ks`：补回 `TYRANO.hideLoadingOverlay()` 调用（汉化合集遗漏）
+- 引擎文件 `kag.tag.js`、`kag.menu.js`、`tyrano.css` 等保持原版不变（汉化合集去除了预加载保护，移植版更稳定）
+
+### 模组加载器
+- 模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)
+- 支持正版游戏《恶魔连结》(DevilConnection)，请通过 Steam 等正规渠道购买游戏

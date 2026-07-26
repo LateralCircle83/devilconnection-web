@@ -23,6 +23,7 @@
 - **模组工坊** — 内置模组入口管理页面
 - **配置界面** — 根据 `config.schema.json` 自动生成配置表单
 - **本地加载** — 支持从本机临时加载 `.asar` 文件测试
+- **简体中文汉化** — 内置全剧本翻译、汉化视频与 UI 资源
 - **全平台** — 桌面端 + 手机端触屏适配
 
 ## 快速开始
@@ -69,8 +70,12 @@ npm run serve
 1. **服务端模组**：将 `.asar` 放入 `mods/` 目录，在 `mods/mods.json` 注册，页面刷新后出现在模组列表
 2. **本地加载**：在模组选择页点「+ 加载本地 ASAR」，选择 `.asar` 文件临时加载（刷新后消失）
 
+模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)，模组开发请遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。加密模组（`DC_ENC_v1`）可用 `解密/decrypt.js` 解密。
+
 ## 许可证与声明
 
-本项目为《恶魔连结》的浏览器移植版本。`tyrano/` 目录包含 TyranoScript 引擎相关文件，`data/` 目录包含游戏原始资源与剧本。具体授权与使用范围请参考原作及引擎许可协议。
-
-模组文件（`mods/*.asar`）版权归各自作者所有。
+- 本项目为《恶魔连结》的浏览器移植版本。
+- **请支持正版游戏**，通过 [Steam](https://store.steampowered.com/app/3054820/_/) 等正规渠道购买《恶魔连结》。
+- `tyrano/` 目录包含 TyranoScript 引擎相关文件，`data/` 目录包含游戏原始资源与剧本。具体授权与使用范围请参考原作及引擎许可协议。
+- 简体中文汉化资源来自古今狐白日语社《恶魔连结》Ver1.01 汉化补丁。
+- 模组文件（`mods/*.asar`）版权归各自作者所有。
