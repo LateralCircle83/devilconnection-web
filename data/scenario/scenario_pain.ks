@@ -211,7 +211,7 @@
 [chara_mod  name="ペイン"  time="0"  cross="false"  storage="chara/8/14.png"  ]
 [tb_start_text mode=1 ]
 #佩恩
-不过嘛，这不就和面包片一样了吗？[p]
+不过嘛，这不就和面包丁一样了吗？[p]
 [_tb_end_text]
 
 [jump  storage="scenario_pain.ks"  target="*pan_kieru"  ]

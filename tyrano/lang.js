@@ -1,16 +1,16 @@
 window.tyrano_lang = {
   word: {
     go_title: '返回标题？',
-    close_confirm: '这个退出就是个摆设，要退出关闭这个标签页就行',
+    close_confirm: '呼哇……差不多该休息了吧',
     load_data: '要读取这个存档吗？',
     load_data_kill:
-      '<span style="color: red;font-family: kowai">我是乱码awa</span>', 
+      '<span style="color: red;font-family: kowai">縺薙�ｮ險倬鹸繧偵Ο繝ｼ繝峨☆繧具ｼ�</span>', 
     load_auto_save: '要读取自动保存的存档吗？<br>最后自动保存时间：<br>$time',
     load_auto_save_tutorial:
       '请按下右上角的<span style="color:#2ea6b7;">回到稍早之前</span><br>从上个抉择点重新开始哦',
     overwrite_save: '要覆盖保存吗？',
     overwrite_save_kill:
-      '<span style="color: red;font-family: kowai">我是乱码awa</span>',
+      '<span style="color: red;font-family: kowai">荳頑嶌縺阪＠縺ｦ繧ｻ繝ｼ繝悶☆繧具ｼ�</span>',
     stop_save: '不能在这里保存哦',
     exit_game: '要关闭窗口结束游戏吗？',
     not_saved: 'NO SAVE',
@@ -35,10 +35,10 @@ window.tyrano_lang = {
     label: '标签',
     label_double: '在同一情景文件中重复了',
     error_occurred: '发生错误了',
-    save_file_violation_1: '改存档了吗？改浏览器存储，挺有耐心的',
+    save_file_violation_1: '你篡改了游戏存档吗？绝对不要使用你未曾经历的存档开始游戏哦',
     save_file_violation_2: '读取存档启动游戏可以吗？',
     save_file_violation_3: '已中止启动。请删除游戏存档后再次启动',
-    steam_login_failed: '我操你妈傻逼SteamAPI',
+    steam_login_failed: '请从 Steam 启动',
     lord: '能与你相遇真是太好了',
     reset_devi: '你在发什么呆？<br>快去夺取魔力',
     double_start: '已经开始了哦。',
@@ -67,7 +67,7 @@ window.tyrano_lang = {
       kanou: '～可能性的探索～',
       bel: '～贝尔芬格的探索～',
     },
-    kill_load: '我绝不会原谅你（...吗？清一下浏览器缓存就可以清存档了）',
+    kill_load: '我绝不会原谅你',
   },
   novel: {
     file_menu_button_save: 'menu_button_save.gif',

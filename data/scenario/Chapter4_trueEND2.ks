@@ -1051,4 +1051,6 @@ dc.writeNEO()
 
 [apply_memory]
 
+[eval exp="sf.epilogueName=f.name"]
+
 [jump  storage="go_to_title.ks"  target=""  ]

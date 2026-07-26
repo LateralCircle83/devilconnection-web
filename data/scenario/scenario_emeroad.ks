@@ -651,7 +651,7 @@
 [chara_mod  name="エメロード"  time="0"  cross="false"  storage="chara/33/15.png"  ]
 [tb_start_text mode=1 ]
 #艾美洛德
-能的到你的喜欢真是太好啦！寿司可不只有海鲜嘛。[p]
+能得到你的喜欢真是太好啦！寿司可不只有海鲜嘛。[p]
 
 [_tb_end_text]
 

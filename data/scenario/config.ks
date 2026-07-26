@@ -38,11 +38,6 @@ $(".layer_camera").not('.base_fore').children().not('.shiro,.kuro').empty();
 ;	画面右上の「Back」ボタン
 	[glink graphic="menu/modoru.png" enterimg="menu/modoru2.png" enterse="tap.ogg" target="*backtitle" x=1196 y=874 width=84 height=86 size=0]
 
-
-;	デバッグメニューボタン（透明画像を使い、JS で文字を描画）
-	[loadjs storage="debug_menu.js"]
-	[glink name="debug_menu_btn" cm="false" size="0" graphic="toumei.png" width=80 height=36 x=1200 y=820 clickse="tap.ogg" target="*open_debug_menu"]
-	[mo_scale name="debug_menu_btn" rate="100"]
 [iscript]
 
 	tf.current_bgm_vol=parseInt(TG.config.defaultBgmVolume);
@@ -197,12 +192,6 @@ $(".layer_camera").not('.base_fore').children().not('.shiro,.kuro').empty();
 ;--------------------------------------------------------------------------------
 ; タイトルに戻る
 ;--------------------------------------------------------------------------------
-*open_debug_menu
-[iscript]
-TYRANO.showDebugMenu();
-[endscript]
-[s]
-
 *backtitle
 [endnolog]
 
@@ -222,8 +211,8 @@ tf.flag_back=$(".message1_fore").css("display");
 [if exp="f.configFromTitle==1"]
 [deffont face="craftmincho" edge="#242247" size=36]
 [eval exp="f.configFromTitle=0"]
-[eval exp="tf.backStorage=f.backFromConfigTo+'.ks'"]
-[jump storage="&tf.backStorage" target="*title"]
+[current layer=message0]
+[jump storage="&`${f.backFromConfigTo}.ks`" target="*title"]
 [else]
 [awakegame]
 [endif]

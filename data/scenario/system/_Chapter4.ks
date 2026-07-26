@@ -1,4 +1,3 @@
-[preload  storage="./data/bgimage/haikei2.webp"  ]
 [preload  storage="./data/fgimage/chara/1/26.png"  ]
 [preload  storage="./data/fgimage/chara/2/0.png"  ]
 [preload  storage="./data/fgimage/chara/1/6.png"  ]

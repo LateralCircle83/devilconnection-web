@@ -65,8 +65,8 @@
 
 [tb_start_text mode=1 ]
 #德比伦
-[if exp="f.ting == 1]敢情昨天和你说话的白色毛团[r]
-就是这位邻居姐姐！？[else]这、这家伙就住在隔壁！？[r]
+[if exp="f.ting == 1]敢情昨天和你说话的白色毛球[r]
+就是这位邻居大姐姐！？[else]这、这家伙就住在隔壁！？[r]
 就算如此，也没料到她竟然会直接上门拜访……[endif][p]
 
 [_tb_end_text]
@@ -1080,7 +1080,7 @@
 [_tb_end_tyrano_code]
 
 [tb_start_text mode=1 ]
-#奈泽尔
+#德比伦
 啥！？[wait time=300]你这家伙！[r]
 居、居然在想这种事……[p]
 
@@ -1454,8 +1454,8 @@
 [_tb_end_text]
 
 [chara_move  name="プレイヤー"  anim="true"  time="3000"  effect="easeOutCubic"  wait="false"  left="1"  top="-80"  width="1234"  height="925"  ]
-[camera  time="3000"  zoom="1.5"  wait="false"  x="0"  y="70"  rotate="0"  layer="layer_camera"  ease_type="ease"  ]
 [chara_mod  name="でびるん"  time="0"  cross="false"  storage="chara/1/8.png"  ]
+[camera  time="3000"  zoom="1.5"  wait="false"  x="0"  y="70"  rotate="0"  layer="layer_camera"  ease_type="ease-out"  ]
 [tb_start_text mode=1 ]
 #德比伦
 ……唔？[wait time=300]什么啊。[wait time=300][p]

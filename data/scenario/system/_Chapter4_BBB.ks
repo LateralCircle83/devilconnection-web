@@ -7,7 +7,6 @@
 [preload  storage="./data/fgimage/chara/64/7.png"  ]
 [preload  storage="./data/fgimage/chara/2/te_hurue.png"  ]
 [preload  storage="./data/fgimage/chara/21/14.png"  ]
-[preload  storage="./data/fgimage/chara/64/5.png"  ]
 [preload  storage="./data/fgimage/chara/64/4.png"  ]
 [preload  storage="./data/fgimage/chara/21/9.png"  ]
 [preload  storage="./data/fgimage/chara/21/19.png"  ]

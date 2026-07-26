@@ -1370,7 +1370,7 @@
 [tb_start_text mode=1 ]
 #德比伦
 毛线，才没有！只是单纯的喜欢，[r]
-跟温柔什么的不搭噶！[p]
+跟温柔什么的不搭呀！[p]
 [_tb_end_text]
 
 [reset_camera  time="1000"  wait="false"  layer="base"  ]

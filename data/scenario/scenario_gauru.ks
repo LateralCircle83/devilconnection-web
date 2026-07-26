@@ -1056,6 +1056,9 @@
 [flash_off  time="1000"  effect="fadeOut"  ]
 
 [l  ]
+[enable_menu_button visible="true"]
+
+[show_photo_button  visible="true"]
 [tb_show_message_window  ]
 [stopbgm  time="1000"  fadeout="true"  ]
 [camera  time="8000"  zoom="1.2"  wait="false"  layer="base"  y="70"  ]

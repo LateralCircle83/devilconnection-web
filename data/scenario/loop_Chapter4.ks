@@ -151,7 +151,7 @@
 
 [chara_hide  name="サブくぴゃ"  time="0"  wait="false"  pos_mode="false"  ]
 [chara_show  name="クピャドエル"  time="0"  wait="false"  storage="chara/14/10.png"  width="1280"  height="960"  left="0"  top="-91"  reflect="false"  ]
-[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie1.png"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
+[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie1.png"  zindex="2"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
 [tb_eval  exp="f.photoPose=1"  name="photoPose"  cmd="="  op="t"  val="1"  val_2="undefined"  ]
 [tb_start_tyrano_code]
 [keyframe name="kupya"]
@@ -1031,7 +1031,7 @@
 [chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/10.png"  ]
 [jump  storage="loop_Chapter4.ks"  target="*pie_pro"  cond="f.currentLoop>4"  ]
 [playse  volume="100"  time="1000"  buf="0"  storage="idou.ogg"  ]
-[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie2.png"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
+[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie2.png"  zindex="2"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
 [tb_start_tyrano_code]
 [keyframe name="kupya"]
 [frame p="0%" y="0"]
@@ -1395,7 +1395,7 @@
 [jump  storage="loop_Chapter4.ks"  target="*loop2_pie_back"  cond=""  ]
 *pie_pro
 
-[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie3.png"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
+[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie3.png"  zindex="2"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
 [tb_start_tyrano_code]
 [keyframe name="kupya"]
 [frame p="0%" y="0"]
@@ -1597,7 +1597,7 @@
 [flash  time="80"  effect="fadeIn"  color="0x000000"  ]
 
 [chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/10.png"  ]
-[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie3.png"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
+[chara_show  name="TAP"  time="1000"  wait="true"  storage="chara/18/pie3.png"  zindex="2"  width="570"  height="140"  left="365"  top="342"  reflect="false"  ]
 [tb_start_tyrano_code]
 [keyframe name="kupya"]
 [frame p="0%" y="0"]
@@ -1714,6 +1714,7 @@
 [stopse  time="0"  buf="5"  ]
 [wait  time="5000"  ]
 *END36
+
 [tb_start_text mode=1 ]
 #？？？①
 [_tb_end_text]

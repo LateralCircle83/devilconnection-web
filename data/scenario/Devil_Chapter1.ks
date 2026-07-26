@@ -2,6 +2,8 @@
 
 [load_memory]
 
+[eval exp="f.name=sf.epilogueName?sf.epilogueName:f.name"]
+
 [eval exp="f.finished=[]" cond="!f.finished"]
 
 [eval exp="f.seibetu=1" cond="!f.seibetu"]

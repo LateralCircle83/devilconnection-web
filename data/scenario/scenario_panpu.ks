@@ -713,14 +713,14 @@
 [tb_start_text mode=1 ]
 #德比伦
 [font face="YOWAKU"][emb exp="f.name"]只是本大爷称手好用的[r]
-工具而[if exp="f.end_complete == 1"][else]已[endif][delay speed=200]……[resetdelay][resetfont][p]
+工具[if exp="f.end_complete == 1"]罢了[else]而已[endif][delay speed=200]……[resetdelay][resetfont][p]
 [_tb_end_text]
 
 [chara_mod  name="コマでび"  time="0"  cross="false"  storage="chara/10/97.png"  ]
 [tb_start_text mode=1 ]
 #德比伦
 [font face="YOWAKU"][if exp="f.end_complete == 1"][delay speed=200]……[resetdelay]但是，[emb exp="f.name"][delay speed=200]……[resetdelay][r]
-很会为替人着想，[delay speed=200]……[resetdelay]这点让本大爷很开心，[else]但是，[delay speed=200]……[resetdelay]总觉得，[delay speed=200]……[resetdelay][r]
+一直想着本大爷的事，[delay speed=200]……[resetdelay]这点让本大爷很开心，[else]但是，[delay speed=200]……[resetdelay]总觉得，[delay speed=200]……[resetdelay][r]
 在这个家里的生活，也不坏。[delay speed=200]……[resetdelay][endif][resetfont][p]
 [_tb_end_text]
 
@@ -1310,15 +1310,15 @@
 [chara_mod  name="パンプティ"  time="0"  cross="false"  storage="chara/34/5.png"  ]
 [tb_start_text mode=1 ]
 #潘普提
-哇～，小[if exp="f.HANYOU == 1]贝尔[else]小恶魔[endif]君的角是弱点呢。[r]
+哇～，[if exp="f.HANYOU == 1]贝尔[else]小恶魔[endif]君的角是弱点呢。[r]
 嘎呼嘎呼！嘿嘿～[p]
 [_tb_end_text]
 
 [chara_mod  name="パンプティ"  time="0"  cross="false"  storage="chara/34/7.png"  ]
 [tb_start_text mode=1 ]
 #潘普提
-君的角是弱点呢。[r]
-嘎呼嘎呼！嘿嘿～[p]
+要不要给你再来一发[r]
+敏感度提高的催眠术呢？[p]
 
 [_tb_end_text]
 

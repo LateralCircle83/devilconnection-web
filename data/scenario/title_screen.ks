@@ -13,13 +13,12 @@
 [preload  storage="./data/others/kowai.ttf"  ]
 [preload  storage="./data/others/JasonHandwriting7p.ttf"  ]
 [preload  storage="./data/others/memoir.ttf"  ]
-
-[preload  storage="./data/others/puikko.ttf"  ]
 [preload  storage="./data/others/fangzhengpangwa.ttf"  ]
-[preload  storage="./data/others/Yawamin.ttf"  ]
-[preload  storage="./data/others/YOWAKU.ttf"  ]
+[preload  storage="./data/others/puikko.ttf"  ]
 [preload  storage="./data/others/sanjihuanle.ttf"  ]
+[preload  storage="./data/others/Yawamin.ttf"  ]
 
+[preload  storage="./data/others/YOWAKU.ttf"  ]
 
 [tb_nolog  ]
 [eval exp="TYRANO.kag.tmp.titlePassed=true"]
@@ -160,8 +159,8 @@ if (sf.loopCount == 0 && !sf.timerStart) sf.timerStart = new Date().toISOString(
 
 [jump  storage="collection.ks"  target=""  ]
 *close_confirm
-[jump  target="*close"  cond="sf.kill!=0"]
 
+[jump  target="*close"  cond="sf.kill!=0"  storage=""  ]
 [eval exp="TYRANO.kag.tmp.escInTitle=false"]
 
 [iscript]

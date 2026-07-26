@@ -219,7 +219,8 @@
 
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-您的内心，也正在夸赞它很合适呢！[if exp="f.currentLoop == 1]虽然咱身为天使，但也会使用邪眼探查的喔。[else]通过咱的真视之眼，便能洞察一切呢。[endif][p]
+您的内心，也正在夸赞它很合适呢！[r]
+[if exp="f.currentLoop == 1]虽然咱身为天使，但也会使用邪眼探查的喔。[else]通过咱的真视之眼，便能洞察一切呢。[endif][p]
 [_tb_end_text]
 
 [jump  storage="kupya.ks"  target="*modoru"  ]
@@ -290,13 +291,13 @@
 [iscript]
 const hintAvailable = dc.hintAvailable(f, sf.endings)
 if (hintAvailable.length == 0) {
-tf.hint = '_empty'
+f.hint = '_empty'
 } else {
 if (!hintAvailable[f.hintIdx]) {
 f.hintIdx = 0
 f.hintLooped = 1
 }
-tf.hint = hintAvailable[f.hintIdx]
+f.hint = hintAvailable[f.hintIdx]
 }
 [endscript]
 
@@ -307,7 +308,7 @@ tf.hint = hintAvailable[f.hintIdx]
 如同之前所言，[endif][p]
 [_tb_end_text]
 
-[jump  storage="kupya.ks"  target="&'END'+tf.hint"  ]
+[jump  storage="kupya.ks"  target="&'END'+f.hint"  ]
 *END_empty
 
 [chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/1.png"  ]
@@ -856,6 +857,14 @@ tf.hint = hintAvailable[f.hintIdx]
 #库皮亚多艾露
 [if exp="f.wedding_kidoku == 1"]亦或者，[else]若当时[endif][font color=0xEC6FC5 bold=true]向他伸出友谊之手……[resetfont][r]
 结果或许已然不同。[p]
+[_tb_end_text]
+
+[jump  storage="kupya.ks"  target="*modoru_hint"  ]
+*ENDundefined
+
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+给咱一点点时间想想嘛[r]晚点再问咱喔[p]
 [_tb_end_text]
 
 [jump  storage="kupya.ks"  target="*modoru_hint"  ]

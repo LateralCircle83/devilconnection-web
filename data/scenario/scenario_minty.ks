@@ -69,7 +69,7 @@
 [chara_mod  name="ミンティ"  time="0"  cross="false"  storage="chara/57/3.png"  ]
 [tb_start_text mode=4 ]
 #薄荷
-您喜欢[delay speed=100]……[resetdelay]喜欢吗？[wait time=300]
+薄荷您[delay speed=100]……[resetdelay]喜欢吗？[wait time=300]
 [_tb_end_text]
 
 [eval exp="f.zyagan_count = 0"]
@@ -942,7 +942,7 @@
 [tb_start_text mode=1 ]
 #薄荷
 我已经心满意足，不再生气了。[r]
-差不多该送把我回巧克拉涅了吧。[p]
+差不多该把我送回巧克拉涅了吧。[p]
 [_tb_end_text]
 
 [tb_start_tyrano_code]

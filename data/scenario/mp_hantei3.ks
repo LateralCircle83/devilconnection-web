@@ -123,7 +123,7 @@
 [tb_start_text mode=1 ]
 #咪蒂尔
 小咪一直在想，如果主动上前搭话，[r]
-会不会反道让你感到不知所措的说。[p]
+会不会反倒让你感到不知所措的说。[p]
 [_tb_end_text]
 
 [chara_mod  name="ミーティア"  time="0"  cross="false"  storage="chara/39/5.png"  ]

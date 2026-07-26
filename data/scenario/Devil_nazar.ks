@@ -549,6 +549,7 @@
 
 [flash  time="0"  effect="fadeIn"  color="0x000000"  ]
 
+[eval exp="f.photoPose=0"]
 [chara_hide  name="コマでび"  time="0"  wait="false"  pos_mode="false"  ]
 [chara_hide  name="プレイヤー"  layer="1"  time="0"  wait="false"  pos_mode="false"  ]
 [chara_show  name="サブでび"  time="0"  wait="false"  storage="chara/30/nazar1.png"  width="1280"  height="960"  left="-7"  top="0"  reflect="false"  ]

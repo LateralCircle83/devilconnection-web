@@ -202,8 +202,6 @@
 
 [_tb_end_text]
 
-[eval exp="f.hint=1"]
-
 [cm  ]
 [chara_show  name="プレイヤー"  zindex="2"  layer="1"  time="0"  wait="false"  storage="chara/2/te.png"  width="1280"  height="960"  ]
 [tb_filter_grayscale  layer="1"  name="プレイヤー"  grayscale="50"  ]
@@ -696,7 +694,7 @@
 [mind_voice  color="0xfffb7a"  name="库皮亚多艾露"  text="一定会……找到的……"  face="KaiseiDecol-Bold"  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-也会继续磨砺感知，[r]
+咱也会继续磨砺感知，[r]
 竭力寻找通往真正结局的线索。[p]
 [_tb_end_text]
 

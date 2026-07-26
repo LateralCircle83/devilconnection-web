@@ -128,7 +128,7 @@ TYRANO.kag.dc = {
         category: 'normal',
         title: '天使的救赎',
         phrase: '那家伙不见了……<br>跑哪去了？',
-        timing: '库皮亚多艾露的对话场景',
+        timing: '库皮亚的对话场景',
         cond: '纠缠不休地触摸库皮亚多艾露',
         hintCond: f => f.currentLoop >= 1 && f.day >= 1,
         bgType: 1,
@@ -290,7 +290,7 @@ TYRANO.kag.dc = {
         title: '苍蓝驱魔师',
         phrase: this.aibou()
           ? '这个水温刚刚好哦！？<br>你这家伙是何居心！？！？'
-          : '召唤出恶魔就为了祓除？这也太离谱了吧……',
+          : '召唤出恶魔就为了祓除？<br>这也太离谱了吧……',
         timing: '第0天 召唤德比伦',
         cond: '于游戏的初始周目中，召唤师报上名字时填写德比伦真名',
         bgType: 2,

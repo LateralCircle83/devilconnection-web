@@ -106,7 +106,7 @@
 [chara_mod  name="劇場でび"  time="0"  cross="false"  storage="chara/15/dagya20.png"  ]
 [tb_start_text mode=1 ]
 #德比伦
-那些杂鱼们去魔利西亚收集魔力时，[r]
+那些杂鱼们去魔吉利西亚收集魔力时，[r]
 会通过嘴巴来补充行动所需的魔力。[p]
 
 
@@ -340,7 +340,8 @@
 [chara_mod  name="劇場でび"  time="0"  cross="false"  storage="chara/15/dagya56.png"  ]
 [tb_start_text mode=1 ]
 #德比伦
-那头老虎……，竟敢把恶魔视为草芥一般来对待……，和[emb exp="f.name"]比，差的太远了。[p]
+那头老虎……，竟敢把恶魔视为草芥一般来对待……，[r]
+和[emb exp="f.name"]比，差的太远了。[p]
 [_tb_end_text]
 
 [chara_mod  name="劇場でび"  time="0"  cross="false"  storage="chara/15/dagya24.png"  ]

@@ -126,6 +126,53 @@
 [_tb_end_text]
 
 [return  ]
+[comment  c="ニセドエル"  ]
+*nise
+
+[chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/1.png"  ]
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+方才因急事，未能及时应铃[r]真是万分抱歉[p]
+[_tb_end_text]
+
+[chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/2.png"  ]
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+似乎是多艾露二世[r]帮忙回应了您的呼唤！[p]
+[_tb_end_text]
+
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+多艾露二世，乃在下[r]同期天使之伙伴[p]
+[_tb_end_text]
+
+[chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/5.png"  ]
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+顺带一提，[r]此名字可是咱所取的呀♪[p]
+[_tb_end_text]
+
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+大天使大人赐名之际[r]咱曾献上一些建议[p]
+
+[_tb_end_text]
+
+[chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/7.png"  ]
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+威势十足的⌈多艾露一世⌋[r]继承其意志的二世[delay speed=100]・・・[resetdelay]没错，就是⌈多艾露二世⌋[p]
+[_tb_end_text]
+
+[chara_mod  name="クピャドエル"  time="0"  cross="false"  storage="chara/14/1.png"  ]
+[tb_start_text mode=1 ]
+#库皮亚多艾露
+库啪[delay speed=100]・・・[resetdelay]大天使大人亦认可了呢[r]那真是美好的回忆呀~[p]
+[_tb_end_text]
+
+[eval exp="f.nise=3"]
+
+[return  ]
 [comment  c="真の名の公言はお気を付けを"  ]
 *hokanokata
 
@@ -533,7 +580,7 @@
 竟骤然回至之前所在之灵魂之泉，令咱大惊。[p]
 [_tb_end_text]
 
-[mind_voice  color="0xfffb7a"  name="库皮亚多艾露"  text="想来，这大概也是临时契約所赐吧……"  face="KaiseiDecol-Bold"  ]
+[mind_voice  color="0xfffb7a"  name="库皮亚多艾露"  text="想来，这大概也是临时契约所赐吧……"  face="KaiseiDecol-Bold"  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
 彼此心意竟能如此相通，实在令人欣慰。[r]

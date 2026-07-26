@@ -545,7 +545,7 @@
 [playse  volume="100"  time="0"  buf="1"  storage="sasu2.ogg"  ]
 [quake  time="300"  count="5"  hmax="3"  wait="false"  ]
 [chara_mod  name="コマでび"  time="0"  cross="false"  storage="chara/10/103.png"  ]
-[jump  storage="scenario_Almaz.ks"  target="*Alice"  cond="f.Alice_nabe>=1"  ]
+[jump  storage="scenario_Almaz.ks"  target="*Alice"  cond="f.Alice_nabe==1"  ]
 [tb_start_text mode=1 ]
 #德比伦
 [font size=50]都说了根本就没这回事！[resetfont][r][font size=25]够了，别再这样了！[resetfont][p]
@@ -1454,7 +1454,7 @@ f.finished = [...f.finished, f.chara.name];
 [chara_move  name="コマでび"  anim="false"  time="0"  effect="linear"  wait="false"  left="40"  top="308"  width="383"  height="400"  ]
 [chara_hide  name="プレイヤー"  layer="1"  time="0"  wait="false"  pos_mode="false"  ]
 [chara_hide  name="アルマース"  time="0"  wait="false"  pos_mode="false"  ]
-[tb_filter_blur  layer="base"  blur="2"  ]
+[tb_filter_blur  layer="base"  blur="10"  ]
 [chara_show  name="アルマース"  time="0"  wait="false"  storage="chara/43/22.png"  width="1280"  height="960"  ]
 [camera  time="1"  zoom="1.2"  wait="false"  ease_type="ease"  layer="layer_camera"  ]
 [wait  time="300"  ]

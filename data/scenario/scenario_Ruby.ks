@@ -1639,7 +1639,7 @@ f.finished = [...f.finished, f.chara.name];
 
 [tb_start_text mode=1 ]
 #鲁比
-居然想护着那些他们？[delay speed=100]……[resetdelay][r]
+居然想护着他们？[delay speed=100]……[resetdelay][r]
 是想逞英雄吗？混蛋。[p]
 [_tb_end_text]
 

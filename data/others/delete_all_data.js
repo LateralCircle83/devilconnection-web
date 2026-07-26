@@ -30,8 +30,8 @@ $.confirm(
           // misc
           NEO: sf.NEO,
           trueCount: sf.trueCount,
-          Lamia_noroi: sf.Lamia_noroi,
           epilogue: sf.epilogue,
+          epilogueName: sf.epilogueName,
           trueEndAfterEpilogue: sf.trueEndAfterEpilogue,
           killWarning: sf.killWarning,
           // 1ループ目に1回でも戻ったフラグを立てる
@@ -54,8 +54,8 @@ $.confirm(
         TYRANO.kag.saveSystemVariable()
         location.href = './index.html'
       },
-      () => false
+      () => false,
     )
   },
-  () => false
+  () => false,
 )

@@ -1204,9 +1204,9 @@
 第[emb exp="f.currentLoop-1"]次重新开始了呢。[delay speed=100]……[resetdelay][p]
 [_tb_end_text]
 
-[tb_start_text mode=4 ]
+[tb_start_text mode=1 ]
 #库皮亚多艾露
-[delay speed=100]……[resetdelay][if exp="f.bel_name==1||f.bel_name_first==1"]没关系[else]真正名字[p][endif]
+[delay speed=100]……[resetdelay][if exp="f.bel_name==1||f.bel_name_first==1"]没关系[else]真正名字[endif][p]
 [_tb_end_text]
 
 [tb_start_text mode=1 ]

@@ -97,7 +97,7 @@
 [chara_mod  name="ベルベル"  time="0"  cross="false"  storage="chara/60/1.png"  ]
 [tb_start_text mode=1 ]
 #彼得
-我是灵魂之泉的守护着，彼得。[r]
+我是灵魂之泉的守护者，彼得。[r]
 这位是我朋友妖精，铃铃。[p]
 
 [_tb_end_text]
@@ -778,8 +778,8 @@
 [chara_mod  name="コマでび"  time="0"  cross="false"  storage="chara/10/140.png"  ]
 [tb_start_text mode=1 ]
 #德比伦
-[delay speed=300]……[resetdelay]哟～，你这不是很懂嘛，[emb exp="f.name"]，%清理后方名字%[r]
-[emb exp="f.name"][p]
+[delay speed=300]……[resetdelay]哟～，你这不是很懂嘛，[emb exp="f.name"]，[r]
+[p]
 [_tb_end_text]
 
 [tb_start_text mode=1 ]
@@ -1374,7 +1374,7 @@ f.finished = [...f.finished, f.chara.name];
 [l  ]
 [free_ptext_neo time=100]
 
-[ptext_neo text="你此刻所收集之物"結末"すら存在しないよ" y="408" time="500"]
+[ptext_neo text="你此刻所收集的「结局」根本不存在" y="408" time="500"]
 
 [l  ]
 [free_ptext_neo time=100]
@@ -1595,7 +1595,7 @@ f.finished = [...f.finished, f.chara.name];
 [tb_autosave  title="b"  ]
 [tb_start_text mode=1 ]
 #彼得
-[font face="kowai"][delay speed=150]铃……，铃…………[resetdelay][resetfont][p]
+[font face="kowai"][delay speed=150]铃(Bel)……，铃(贝尔)…………（备注:双关）[resetdelay][resetfont][p]
 
 
 

@@ -255,7 +255,7 @@
 
 [_tb_end_text]
 
-[chara_mod  name="BBB"  time="0"  cross="false"  storage="chara/64/5.png"  ]
+[chara_mod  name="BBB"  time="0"  cross="false"  storage="chara/64/13.png"  ]
 [tb_start_text mode=1 ]
 #BBB
 [delay speed=100]若你未能取得真名，[r]

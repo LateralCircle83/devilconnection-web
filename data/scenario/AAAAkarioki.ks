@@ -300,7 +300,7 @@
 遊んでるよな[r]…この俺で。[p]
 [elsif exp="f.gauru==6"]
 #ガウルォス
-フッ、おもしれぇ[if exp="f.seibetu == 1]男[else]女[endif]……[p]
+フッ、おもしれぇ[if exp="f.seibetu == 1]男[else]女[endif]…[p]
 [elsif exp="f.gauru==7"]
 #ガウルォス
 お前さん…なかなか前髪が[r]イケてるな！[p]

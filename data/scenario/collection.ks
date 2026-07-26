@@ -10,7 +10,7 @@ tf.omakeAvailable =
 sf.collectedEndings.includes('2') ||
 sf.collectedEndings.includes('30') ||
 sf.collectedEndings.includes('31')
-tf.bgPrefix = sf.characters.includes('クピャドエル') && Math.random()*100>=80 ? '_' : ''
+tf.bgPrefix = sf.characters.includes('クピャドエル') && Math.random()*100+1>=100 ? '_' : ''
 [endscript]
 
 [bg  time="200"  method="crossfade"  storage="&`hondana${tf.bgPrefix}.webp`"  ]

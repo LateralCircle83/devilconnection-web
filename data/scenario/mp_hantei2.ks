@@ -144,7 +144,7 @@
 [chara_mod  name="でびるん"  time="0"  cross="false"  storage="chara/1/64.png"  ]
 [chara_move  name="でびるん"  anim="false"  time="0"  effect="linear"  wait="false"  left="128"  top="38"  width="999"  height="749"  ]
 [wait  time="100"  ]
-[chara_show  name="プレイヤー"  zindex="2"  layer="1"  time="0"  wait="false"  storage="chara/2/mate.png"  width="1280"  height="960"  ]
+[chara_mod  name="プレイヤー"  zindex="2"  layer="1"  time="0"  wait="false"  storage="chara/2/mate.png"  width="1280"  height="960"  ]
 [flash_off  time="20"  effect="fadeOut"  ]
 
 [tb_start_text mode=1 ]
@@ -166,6 +166,7 @@
 [flash  time="1000"  effect="fadeIn"  color="0x000000"  ]
 
 [chara_hide_all  time="0"  wait="false"  ]
+[chara_hide  name="プレイヤー"  layer="1"  time="0"  wait="false"  pos_mode="false"  ]
 [stopbgm  time="1000"  fadeout="true"  ]
 [wait  time="1000"  ]
 [playse  volume="60"  time="0"  buf="1"  storage="fuku.ogg"  ]

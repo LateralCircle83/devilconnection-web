@@ -115,6 +115,7 @@
 [jump  target="*osii"  cond="f.call_name=='べるふえごーる'"  storage=""  ]
 [jump  target="*osii"  cond="f.call_name=='贝尔菲格'"  storage=""  ]
 [jump  target="*dagya"  cond="f.call_name=='ダギャマキコ'"  storage=""  ]
+[jump  target="*dagya"  cond="f.call_name=='哒呀玛奇子'"  storage=""  ]
 [jump  target="*debirun"  cond="f.call_name=='でびるん'"  storage=""  ]
 [jump  target="*debirun"  cond="f.call_name=='でびくん'"  storage=""  ]
 [jump  target="*debirun"  cond="f.call_name=='德比伦'"  storage=""  ]
@@ -176,7 +177,7 @@
 [tb_show_message_window  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-库啪！？原来不是「达嘉玛奇克」吗……[r]
+库啪！？原来不是「哒呀玛奇子」吗……[r]
 咱的预测失准了呢。[p]
 [_tb_end_text]
 

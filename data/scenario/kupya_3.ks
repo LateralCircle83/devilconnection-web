@@ -12,8 +12,6 @@
 [jump  storage="loop_kupya_3.ks"  target="*30"  ]
 *loop1_kidoku
 
-[eval exp="f.hint=1"]
-
 [cm  ]
 [chara_show  name="プレイヤー"  zindex="2"  layer="1"  time="0"  wait="false"  storage="chara/2/te.png"  width="1280"  height="960"  ]
 [tb_filter_grayscale  layer="1"  name="プレイヤー"  grayscale="50"  ]

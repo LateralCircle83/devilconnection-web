@@ -280,7 +280,7 @@
 [fadein_window  time="1000"  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-只是，到底要在个阶段[r]
+只是，到底要在哪个阶段[r]
 才能救下德比君呢？[p]
 [_tb_end_text]
 
@@ -300,7 +300,7 @@
 [mind_voice  color="0xfffb7a"  name="库皮亚多艾露"  text="一定会……找到的……"  face="KaiseiDecol-Bold"  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-也会继续磨砺感知，[r]
+咱也会继续磨砺感知，[r]
 竭力寻找通往真正结局的线索。[p]
 [_tb_end_text]
 

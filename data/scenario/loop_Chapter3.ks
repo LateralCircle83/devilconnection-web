@@ -461,8 +461,8 @@
 [chara_mod  name="成体クピャドエル"  time="0"  cross="false"  storage="chara/36/9.png"  ]
 [tb_start_text mode=1 ]
 #库皮亚多艾露
-……但是，咱觉得[emb exp="f.name"]也一定从那位自由奔放的德比君身上，[r]
-得到过救赎吧。[p]
+……但是，咱觉得[emb exp="f.name"]也一定从那位自由奔放的[r]
+德比君身上，得到过救赎吧。[p]
 
 [_tb_end_text]
 

@@ -543,7 +543,7 @@ TYRANO.kag.dc = {
   collectionCharaCategoryData: function () {
     return ['beast']
       .concat(
-        this.allCharasOpenInCollection() ? ['fairy', 'demon', 'debirun'] : []
+        this.allCharasOpenInCollection() ? ['fairy', 'demon', 'debirun'] : [],
       )
       .map(name => ({
         name,
@@ -593,14 +593,16 @@ TYRANO.kag.dc = {
 ;(function () {
   TYRANO.kag.variable.sf.characters = Array.from(
     new Set(
-      TYRANO.kag.variable.sf.characters.map(c => (c == 'D・RED' ? 'D・Red' : c))
-    )
+      TYRANO.kag.variable.sf.characters.map(c =>
+        c == 'D・RED' ? 'D・Red' : c,
+      ),
+    ),
   )
   TYRANO.kag.variable.sf.collectedCharacters = Array.from(
     new Set(
       TYRANO.kag.variable.sf.collectedCharacters.map(c =>
-        c == 'D・RED' ? 'D・Red' : c
-      )
-    )
+        c == 'D・RED' ? 'D・Red' : c,
+      ),
+    ),
   )
 })()

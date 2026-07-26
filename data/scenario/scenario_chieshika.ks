@@ -426,8 +426,8 @@
 [tb_start_text mode=1 ]
 #柴西卡
 [if exp="f.Alice_nabe >= 1]爱丽丝忘拿制药的材料，[r]
-让我来扯一块恶魔身上的部位带回去。[else]爱丽丝让我来确认下偷窥的犯人，顺便弄点恶魔的身体部位[r]
-带回去当制药的材料，[endif]所以我就被赶来做这破事了。[p]
+让我来扯一块恶魔身上的部位带回去，[p][else]爱丽丝让我来确认下偷窥的犯人，顺便弄点恶魔的身体部位[r]
+带回去当制药的材料，[p][endif]所以我就被赶来做这破事了。[p]
 
 
 [_tb_end_text]
@@ -619,7 +619,7 @@
 [tb_start_text mode=1 ]
 #柴西卡
 [if exp="f.Alice_nabe >= 1]爱丽丝忘拿制药的材料，[r]
-让我来扯一块恶魔身上的部位带回去。[else]爱丽丝让我来确认下偷窥的犯人，[r]
+让我来扯一块恶魔身上的部位带回去，[p][else]爱丽丝让我来确认下偷窥的犯人，[r]
 顺便弄点恶魔的身体部位带回去当制药的材料。[endif]所以我就被赶来做这破事了。[p]
 
 [_tb_end_text]
@@ -837,7 +837,7 @@
 
 [tb_start_text mode=1 ]
 #德比伦
-[font size=50][font face="DZUYOKU"][if exp="f.ject_tasuke== 1][else]前几天不也发生过这种事吗！[r]
+[font size=50][font face="DZUYOKU"][if exp="f.ject_tasuke== 1]前几天不也发生过这种事吗！[r]
 [endif]别光看着，快来救我[emb exp="f.name"]！[resetfont][p]
 
 

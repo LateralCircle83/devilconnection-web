@@ -64,7 +64,7 @@
 [eval exp="f.subtitle='bel'"]
 
 [bg  time="1000"  method="crossfade"  storage="kuro.webp"  wait="false"  ]
-[tb_ptext_show  x="520"  y="415"  size="30"  color="0xff0000"  time="3000"  text="～贝尔芬格的探索～"  anim="true"  face="kowai"  edge="undefined"  shadow="undefined"  fadeout="true"  wait="true"  in_effect="fadeInDown"  out_effect="fadeOutDown"  ]
+[tb_ptext_show  x="510"  y="415"  size="30"  color="0xff0000"  time="3000"  text="～贝尔芬格的探索～"  anim="true"  face="kowai"  edge="undefined"  shadow="undefined"  fadeout="true"  wait="true"  in_effect="fadeInDown"  out_effect="fadeOutDown"  ]
 [elsif exp="f.end_complete==1"]
 
 [comment  c="↓end_completepしたとき"  ]
@@ -299,13 +299,10 @@ tf.ngWord = dc.ngWords.some(word => f.name.includes(word))
 [endscript]
 
 [tb_eval  exp="f.syo=0"  name="syo"  cmd="="  op="t"  val="0"  val_2="undefined"  ]
-
+[jump  storage="scene1.ks"  target="*input_warui"  cond="f.name.includes('<')"  ]
 [jump  storage="scene1.ks"  target="*input_ng"  cond="dc.ngWords.some(w=>f.name.toLowerCase().includes(w))"  ]
 [jump  storage="scene1.ks"  target="*input_devil"  cond="dc.devilWords.some(w=>f.name.toUpperCase().includes(w.toUpperCase()))"  ]
-[jump  storage="scene1.ks"  target="*input_GeekPigeon"  cond="f.name=='GeekPigeon'"  ]
-[jump  storage="scene1.ks"  target="*input_GeekPigeon"  cond="f.name=='geekpigeon'"  ]
-[jump  storage="scene1.ks"  target="*input_GeekPigeon"  cond="f.name=='lh2282'"  ]
-[jump  storage="scene1.ks"  target="*input_GeekPigeon"  cond="f.name=='Geekpigeon'"  ]
+[jump  storage="scene1.ks"  target="*input_long"  cond="f.name.length>10"  ]
 [jump  storage="scene1.ks"  target="*input_musizu"  cond="f.name=='クピャドエル'"  ]
 [jump  storage="scene1.ks"  target="*input_musizu"  cond="f.name=='くぴゃどえる'"  ]
 [jump  storage="scene1.ks"  target="*input_musizu"  cond="f.name=='库皮亚多艾露'"  ]
@@ -334,7 +331,7 @@ tf.ngWord = dc.ngWords.some(word => f.name.includes(word))
 [jump  storage="scene1.ks"  target="*input_akuma"  cond="dc.makaiWords.some(w=>f.name.toLowerCase().includes(w))"  ]
 [jump  storage="scene1.ks"  target="*input_zako"  cond="dc.zakoWords.some(w=>f.name.includes(w))"  ]
 [jump  storage="scene1.ks"  target="*input_kesu"  cond="dc.kesuWords.some(w=>f.name==w)"  ]
-
+[jump  storage="scene1.ks"  target="*input_warui"  cond="f.name.startsWith('<')"  ]
 [jump  storage="scene1.ks"  target="*input_coinfirm"  cond="f.name!=''"  ]
 [quake  time="300"  count="5"  hmax="3"  wait="false"  ]
 [playse  volume="100"  time="0"  buf="1"  storage="sasu.ogg"  ]
@@ -436,7 +433,7 @@ tf.ngWord = dc.ngWords.some(word => f.name.includes(word))
 [elsif exp="sf.kill>=3"]
 #&f.debiName
 ……说起来，刚才被魔法阵吞噬的那一刻，[r]
-那家伙一脸呆滞的申请。[font size=25]到底怎么回事啊？[resetfont][p]
+那家伙一脸呆滞的神情。[font size=25]到底怎么回事啊？[resetfont][p]
 [endif]
 [_tb_end_tyrano_code]
 
@@ -515,7 +512,7 @@ tf.ngWord = dc.ngWords.some(word => f.name.includes(word))
 [tb_start_tyrano_code]
 [if exp="f.script==1"]
 #&f.debiName
-[delay speed=200]……[resetdelay]你不应该触发这个的。我把这个删了awa[wait time=200]
+[delay speed=200]……[resetdelay]你这家伙，可是相当地坏呀。[wait time=200]
 [elsif exp="f.script==2"]
 #&f.debiName
 [delay speed=200]……[resetdelay]再怎么试，都是没用的啦。[wait time=200]
@@ -618,37 +615,6 @@ tf.ngWord = dc.ngWords.some(word => f.name.includes(word))
 [_tb_end_text]
 
 [jump  storage="scene1.ks"  target="*input_coinfirm"  cond="f.name!=''"  ]
-
-*input_GeekPigeon
-
-[chara_mod  name="でびるん"  time="0"  cross="false"  storage="chara/1/5.png"  ]
-[tb_eval  exp="f.syo=1"  name="syo"  cmd="="  op="t"  val="1"  val_2="undefined"  ]
-[tb_start_text mode=1 ]
-#&f.debiName
-[font size=50 color="#87CEEB"]GeekPigeon[resetfont][font size=50]...[resetfont][r]
-
-[_tb_end_text]
-
-[chara_mod  name="でびるん"  time="0"  cross="false"  storage="chara/1/10.png"  ]
-[tb_start_text mode=4 ]
-#&f.debiName
-想试试这个名字什么特殊彩蛋吗awa[r]
-没有哒awa不过你可以试试设置菜单里面的调试菜单哦awa[p]
-
-
-[_tb_end_text]
-
-[chara_mod  name="でびるん"  time="0"  cross="false"  storage="chara/1/10.png"  ]
-[tb_start_text mode=4 ]
-#&f.debiName
-别玩坏啦awa[r]
-
-
-[_tb_end_text]
-
-[jump  storage="scene1.ks"  target="*input_coinfirm"  cond="f.name!=''"  ]
-
-
 *input_fanatic
 
 [jump  storage="scene1.ks"  target="*input_kill"  cond="sf.kill!=0"  ]
@@ -972,7 +938,7 @@ TYRANO.kag.ftag.startTag("jump",{target:"*hutanari"});
 [tb_start_text mode=1 ]
 #&f.debiName
 [emb exp="f.name"]。哼～，真是个傻不拉几的名字。[r]
-[wait time=300]你的名字，本大爷已经牢记于心了。[p]
+[wait time=300]你的名字，本大爷已经捏在手里了。[p]
 [_tb_end_text]
 
 [jump  storage="scene1.ks"  target="*no_Solomon"  ]
@@ -982,7 +948,7 @@ TYRANO.kag.ftag.startTag("jump",{target:"*hutanari"});
 [tb_start_text mode=1 ]
 #&f.debiName
 [emb exp="f.name"]。还真是个非常契合你的名字啊……[r]
-[wait time=300]你的名字，本大爷已经牢记于心了。[p]
+[wait time=300]你的名字，本大爷已经捏在手里了。[p]
 [_tb_end_text]
 
 *no_Solomon

@@ -18,12 +18,12 @@
 [free_bg_layermode  name="mahou"  time="5000"  ]
 
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [_tb_end_text]
 
 [fadein_window  time="300"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [font size=50]Chao！[resetfont][p]
 [_tb_end_text]
 
@@ -61,7 +61,7 @@
 [camera  time="5000"  zoom="1.5"  wait="false"  y="60"  layer="1"  ]
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/1.png"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 那个[delay speed=100]……[resetdelay][p]
 [_tb_end_text]
 
@@ -73,7 +73,7 @@
 [flash_off  time="20"  effect="fadeOut"  ]
 
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 恶魔连结，您玩的还开心吗！？[p]
 
 [_tb_end_text]
@@ -95,7 +95,7 @@
 [s  cond="!f.mp_check_pass"  ]
 [call  storage="zyagan_player.ks"  target=""  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [_tb_end_text]
 
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/3.png"  ]
@@ -104,14 +104,14 @@
 [call  storage="me.ks"  target="*meopen"  ]
 [fadein_window  time="300"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 毕竟连全部结局都收集齐了，[r]
 没有理由不开心的！[p]
 [_tb_end_text]
 
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/4.png"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [delay speed=100]……[resetdelay]对吧？[p]
 [_tb_end_text]
 
@@ -123,7 +123,7 @@
 [s  cond="!f.mp_check_pass"  ]
 [call  storage="zyagan_player.ks"  target=""  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [_tb_end_text]
 
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/5.png"  ]
@@ -131,14 +131,14 @@
 [call  storage="me.ks"  target="*meopen"  ]
 [fadein_window  time="300"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 如果是你为了观察差分而沉默不语，那倒也可以原谅。[p]
 [_tb_end_text]
 
 [playse  volume="100"  time="0"  buf="1"  storage="ka-.ogg"  ]
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/6.png"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 届时，我会拼尽全力做出反应给你看的喔！！[p]
 [_tb_end_text]
 
@@ -171,20 +171,20 @@
 [wait  time="500"  ]
 [tb_show_message_window  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [delay speed=100]……[resetdelay]这个世界，是我的宝物。[p]
 [_tb_end_text]
 
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/2.png"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 希望这个世界，还有这份回忆[delay speed=100]……[resetdelay][r]
 也能成为你的宝物！[p]
 [_tb_end_text]
 
 [chara_mod  name="開発陣"  time="0"  cross="false"  storage="chara/79/8.png"  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 啊，如果有你中意的孩子，或者感想什么的，[r]
 都可以跟我说喔，我会很开心的呢。[p]
 [_tb_end_text]
@@ -203,7 +203,7 @@
 [playse  volume="100"  time="0"  buf="1"  storage="Horror.ogg"  ]
 [tb_show_message_window  ]
 [tb_start_text mode=1 ]
-#Bayachao
+#Babichao
 [delay speed=100]……[resetdelay]你们可要记住，这一切由我的意愿所裁定。[r]
 抹消它，也不过是一念之间。[p]
 [_tb_end_text]
