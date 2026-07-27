@@ -222,7 +222,7 @@
     $.loadQueue = function (url, priority) {
       var blobUrl = createBlobURL(url)
       if (blobUrl) url = blobUrl
-      return _origLoadQueue.call($, url, priority)
+      if (typeof _origLoadQueue === 'function') return _origLoadQueue.call($, url, priority)
     }
 
     // Intercept jQuery background-image CSS URLs

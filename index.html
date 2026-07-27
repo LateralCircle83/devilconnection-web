@@ -75,32 +75,13 @@
     <!-- KeyConfig.js -->
     <script src="./data/system/KeyConfig.js"></script>
 
-    <!-- tyrano -->
-    <script src="./tyrano/lang.js"></script>
-    <script src="./tyrano/libs.js"></script>
-    <script src="./tyrano/tyrano.js"></script>
-    <script src="./tyrano/tyrano.base.js"></script>
-    <script src="./tyrano/plugins/kag/kag.js"></script>
-    <script src="./tyrano/plugins/kag/kag.event.js"></script>
-    <script src="./tyrano/plugins/kag/kag.key_mouse.js"></script>
-    <script src="./tyrano/plugins/kag/kag.layer.js"></script>
-    <script src="./tyrano/plugins/kag/kag.menu.js"></script>
-    <script src="./tyrano/plugins/kag/kag.parser.js"></script>
-    <script src="./tyrano/plugins/kag/kag.rider.js"></script>
-    <script src="./tyrano/plugins/kag/kag.studio.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_audio.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_camera.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_ext.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_system.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_vchat.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_ar.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag_three.js"></script>
-    <script src="./tyrano/plugins/kag/kag.tag.js"></script>
+    <!-- tyrano（起動時に動的読み込み）-->
 
     <!-- Others -->
     <link href="./tyrano/libs/textillate/assets/animate.css" rel="stylesheet" />
     <script src="./tyrano/libs/textillate/assets/jquery.lettering.js"></script>
     <script src="./tyrano/libs/textillate/jquery.textillate.js"></script>
+    <script>$.isElectron=function(){return false}</script>
     <script src="./tyrano/libs/jquery.touchSwipe.min.js"></script>
     <script src="./tyrano/libs/howler.js"></script>
     <script src="./tyrano/libs/jsQR.js"></script>
@@ -110,8 +91,7 @@
     <script src="./mod_compat.js"></script>
     <script src="./mod_loader.js"></script>
 
-    <!-- Electron対応 -->
-    <script src="./electron_latest.js"></script>
+    <!-- Electron対応（動的読み込み：エンジン後に実行）-->
   </head>
 
   <body
@@ -458,6 +438,48 @@
           modListEl.innerHTML = html
         }
 
+        // 引擎文件列表（按依赖顺序）
+        var engineScripts = [
+          'tyrano/lang.js',
+          'tyrano/libs.js',
+          'tyrano/tyrano.js',
+          'tyrano/tyrano.base.js',
+          'tyrano/plugins/kag/kag.js',
+          'tyrano/plugins/kag/kag.event.js',
+          'tyrano/plugins/kag/kag.key_mouse.js',
+          'tyrano/plugins/kag/kag.layer.js',
+          'tyrano/plugins/kag/kag.menu.js',
+          'tyrano/plugins/kag/kag.parser.js',
+          'tyrano/plugins/kag/kag.rider.js',
+          'tyrano/plugins/kag/kag.studio.js',
+          'tyrano/plugins/kag/kag.tag_audio.js',
+          'tyrano/plugins/kag/kag.tag_camera.js',
+          'tyrano/plugins/kag/kag.tag_ext.js',
+          'tyrano/plugins/kag/kag.tag_system.js',
+          'tyrano/plugins/kag/kag.tag_vchat.js',
+          'tyrano/plugins/kag/kag.tag_ar.js',
+          'tyrano/plugins/kag/kag.tag_three.js',
+          'tyrano/plugins/kag/kag.tag.js',
+          'data/system/KeyConfig.js',
+          'electron_latest.js',
+        ]
+
+        function loadEngine(index) {
+          if (index >= engineScripts.length) {
+            // 引擎全部加载完毕，启动游戏
+            finishStart()
+            return
+          }
+          var s = document.createElement('script')
+          s.src = './' + engineScripts[index]
+          s.onload = function () { loadEngine(index + 1) }
+          s.onerror = function () {
+            console.warn('引擎加载失败:', engineScripts[index])
+            loadEngine(index + 1)
+          }
+          document.head.appendChild(s)
+        }
+
         function startGame(e) {
           if (e) e.stopPropagation()
           startBtn.disabled = true
@@ -470,16 +492,19 @@
             selectedIds.push(checkboxes[i].getAttribute('data-id'))
           }
 
+          var doLoad = function () {
+            // 模组就绪后动态加载引擎文件（可被 wireScriptInterceptor 拦截）
+            loadEngine(0)
+          }
+
           if (window.ModLoader) {
-            ModLoader.init(selectedIds).then(function () {
-              finishStart()
-            }).catch(function (err) {
+            ModLoader.init(selectedIds).then(doLoad).catch(function (err) {
               console.warn('Mod init error, starting anyway:', err)
-              finishStart()
+              doLoad()
             })
           } else {
             console.warn('ModLoader not available')
-            finishStart()
+            doLoad()
           }
         }
 

@@ -112,3 +112,13 @@
 - `wireLinkInterceptor`：拦截 `link.href = url`
 - `createElement`：video/script/link 创建时绑定对应拦截器
 - 至此 mod_loader 支持拦截所有主流资源加载方式：img、video、audio、script、link、fetch、XHR、CSS
+
+### 重构：引擎文件改为动态加载
+- 移除 `index.html` 中全部引擎 `<script>` 标签，改为 `ModLoader.init()` 成功后通过 `loadEngine()` 顺序动态创建
+- `wireScriptInterceptor` 可在引擎文件加载前就绪，模组可覆盖任意引擎 JS 文件
+- 新增 `$.isElectron` 垫片（静态加载的 touchSwipe 在 libs.js 动态加载前需要此函数）
+- `$.loadQueue` 拦截器增加守卫，防止引擎文件未加载时调用 undefined
+
+### 修复：$.loadQueue 拦截器
+- 引擎文件改为动态加载后，`$.loadQueue` 在拦截器安装时可能尚未定义
+- 添加 `typeof _origLoadQueue === 'function'` 守卫，避免 `undefined.call()` 报错

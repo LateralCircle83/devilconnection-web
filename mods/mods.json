@@ -20,7 +20,7 @@
         "name": "库啪哒呀小剧场",
         "description": "登上小剧场舞台，与库皮亚和德比伦即兴聊天互动！",
         "file": "dc_theatre.asar",
-        "version": "1.2.2",
+        "version": "1.2.3",
         "author": "https://github.com/Luoyu-Wangchai"
     },
     {
@@ -50,7 +50,7 @@
     {
         "id": "test_all",
         "name": "全面拦截测试",
-        "description": "测试 mod_loader 所有 13 种拦截器",
+        "description": "测试全部拦截器 + 动态引擎文件拦截（KeyConfig.js）",
         "file": "test_all.asar",
         "version": 100
     }
