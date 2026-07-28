@@ -53,5 +53,12 @@
         "description": "测试全部拦截器 + 动态引擎文件拦截（KeyConfig.js）",
         "file": "test_all.asar",
         "version": 100
+    },
+    {
+        "id": "dc_debug",
+        "name": "调试菜单",
+        "description": "游戏内 DEBUG 工具：数值编辑、存档导出、路线开关、成就补发等",
+        "file": "dc_debug.asar",
+        "version": "1.0.0"
     }
 ]
