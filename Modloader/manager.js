@@ -240,6 +240,9 @@ document.addEventListener('DOMContentLoaded', function() {
     overlay.style.opacity = '0'
     setTimeout(function() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
+      // 恢复触摸阻止，防止游戏画面滚动
+      document.body.style.touchAction = 'none'
+      document.body.style.overflow = 'hidden'
       if (window.TYRANO && TYRANO.init) TYRANO.init()
     }, 400)
   }

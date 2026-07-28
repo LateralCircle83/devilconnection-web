@@ -104,12 +104,11 @@
   <body
     onselectstart="return false"
     onContextmenu="return false"
-    ontouchmove="event.preventDefault()"
   >
     <!-- 主管理界面（选项卡式） -->
-    <div id="tyrano_click_to_start" style="position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2147483647;background:rgba(15,12,24,1);user-select:none;-webkit-user-select:none;display:flex;font-family:sans-serif;color:#e2e8f0;">
+    <div id="tyrano_click_to_start">
       <!-- 左侧导航栏 -->
-      <div style="width:180px;min-width:180px;background:rgba(22,19,36,1);border-right:1px solid rgba(255,255,255,0.04);display:flex;flex-direction:column;padding:16px 10px;gap:4px;">
+      <div class="mgr-sidebar">
         <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:10px;">
           <div style="width:30px;height:30px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:13px;">D</div>
           <span style="font-size:13px;font-weight:700;color:#f1f5f9;">管理器</span>
@@ -121,7 +120,7 @@
       </div>
 
       <!-- 右侧内容 -->
-      <div style="flex:1;overflow-y:auto;padding:28px 32px;min-width:0;">
+      <div class="mgr-content">
 
         <!-- 控制台 -->
         <div class="page" id="page-console">

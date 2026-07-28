@@ -4,6 +4,7 @@
   z-index: 2147483647; background: rgba(15,12,24,1);
   user-select: none; -webkit-user-select: none;
   display: flex; font-family: sans-serif; color: #e2e8f0;
+  touch-action: pan-y; -webkit-overflow-scrolling: touch;
 }
 /* 左侧导航栏 */
 .mgr-sidebar {
@@ -139,3 +140,24 @@
   transition: transform 0.15s;
 }
 .btn-save:hover { transform: scale(1.03); }
+
+/* 手机端适配 */
+@media (max-width: 640px) {
+  #tyrano_click_to_start { flex-direction: column; overflow-y: auto; }
+  .mgr-sidebar {
+    width: 100%; min-width: 0; flex-direction: row;
+    padding: 10px 8px; gap: 2px; overflow-x: auto;
+    border-right: none; border-bottom: 1px solid rgba(255,255,255,0.04);
+    flex-shrink: 0;
+  }
+  .mgr-sidebar .logo { display: none; }
+  .nav-item { font-size: 12px; padding: 7px 8px; white-space: nowrap; flex-shrink: 0; }
+  .nav-item .icon { margin-right: 4px; }
+  .mgr-content { padding: 16px; }
+  .page h1 { font-size: 20px; }
+  .page h2 { font-size: 17px; }
+  .tile-grid, .save-grid { grid-template-columns: 1fr; }
+  .tile-btn { padding: 14px; }
+  .tile-btn .tile-icon { font-size: 22px; }
+  .btn-start { font-size: 15px; padding: 14px 0; }
+}
