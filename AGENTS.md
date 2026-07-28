@@ -200,15 +200,15 @@ The mod format and development conventions follow the **DevilConnection ModLoade
 - Full spec: https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md
 - Mods are `.asar` packages placed in `mods/` directory
 - Each mod can contain `mods.json` (metadata), `hook.js` (runtime injection), `config.schema.json` (config UI), and `data/` (resource overrides)
-- `hook.js` runs in the renderer context with `window.electronAPI` shimmed via `mod_compat.js`
+- `hook.js` runs in the renderer context with `window.electronAPI` shimmed via `Modloader/mod_compat.js`
 - Config is stored in `localStorage.mod_config_<id>`, mapped from `plugins/config/<id>.json` paths
 
 ### Key files
 
 | File | Purpose |
 |------|---------|
-| `mod_loader.js` | ASAR parser, file index, resource interception (fetch/XHR/img/CSS/Audio/loadText/loadQueue) |
-| `mod_compat.js` | Electron API shim for mod hook.js (`electronAPI`, `require('fs')`, `require('path')`, `Buffer`) |
+| `Modloader/mod_loader.js` | ASAR parser, file index, resource interception (fetch/XHR/img/CSS/Audio/loadText/loadQueue) |
+| `Modloader/mod_compat.js` | Electron API shim for mod hook.js (`electronAPI`, `require('fs')`, `require('path')`, `Buffer`) |
 | `mods/mods.json` | Mod index (id, name, file path) |
 | `mods/*.asar` | Mod packages |
 

@@ -40,8 +40,9 @@ npm run serve
 
 ```
 ├── index.html              # 浏览器渲染入口（模组选择 + 启动）
-├── mod_loader.js           # 模组加载器（ASAR 解析、资源拦截、DCML API）
-├── mod_compat.js           # Electron API 兼容层（fs/path/Buffer/electronAPI）
+├── Modloader/              # 模组加载系统
+│   ├── mod_loader.js       # 模组加载器（ASAR 解析、资源拦截、DCML API）
+│   └── mod_compat.js       # Electron API 兼容层（fs/path/Buffer/electronAPI）
 ├── browser_api.js          # 浏览器版 API shim
 ├── electron_latest.js      # 浏览器适配层
 │
