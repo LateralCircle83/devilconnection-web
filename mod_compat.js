@@ -93,13 +93,13 @@
           if (encoding === 'base64') {
             var bin = atob(data)
             var arr = new Uint8Array(bin.length)
-            for (var i = 0; i < bin.length; i++) {
-              arr[i] = bin.charCodeAt(i)
+              for (var i = 0; i < bin.length; i++) {
+                arr[i] = bin.charCodeAt(i)
+              }
+              return arr
             }
-            return arr.buffer
-          }
-          var enc = new TextEncoder()
-          return enc.encode(data).buffer
+            var enc = new TextEncoder()
+            return enc.encode(data)
         }
         return data
       },
