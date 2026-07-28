@@ -464,18 +464,50 @@
       return { meta: meta, asarIdx: idx }
     },
 
+    // 注册本地模组（存入缓冲区，init 时按顺序加载）
+    _localBuffers: {},
+    _localConfigs: {},
+    registerLocalMod: function (id, buffer) {
+      this._localBuffers[id] = buffer
+      // 预读 config.schema.json
+      try {
+        var parsed = parseAsar(buffer)
+        if (parsed) {
+          var entry = parsed.files.get('config.schema.json')
+          if (entry) {
+            var b = new Uint8Array(parsed.buffer, parsed.dataOffset + entry.offset, entry.size)
+            this._localConfigs[id] = JSON.parse(new TextDecoder('utf-8').decode(b))
+          }
+        }
+      } catch (e) {}
+    },
+
     init: async function (selectedIds) {
       var resp = await fetch('./mods/mods.json')
       var modList = []
       if (resp.ok) modList = await resp.json()
+      // 按 selectedIds 的顺序加载模组（拖拽排序后的顺序）
+      var modMap = {}
+      for (var mi = 0; mi < modList.length; mi++) modMap[modList[mi].id] = modList[mi]
       var loadedMods = []
-      for (var i = 0; i < modList.length; i++) {
-        if (selectedIds.indexOf(modList[i].id) !== -1) {
+      for (var si = 0; si < selectedIds.length; si++) {
+        var sid = selectedIds[si]
+        var entry = modMap[sid]
+        if (entry) {
+          // 常规模组
           var idxBefore = loadedAsars.length
-          var ok = await this.loadAsar('./mods/' + modList[i].file)
+          var ok = await this.loadAsar('./mods/' + entry.file)
           if (ok) {
-            console.log('ModLoader: loaded', modList[i].name)
-            loadedMods.push({ id: modList[i].id, asarIdx: idxBefore })
+            console.log('ModLoader: loaded', entry.name)
+            loadedMods.push({ id: entry.id, asarIdx: idxBefore })
+          }
+        } else if (this._localBuffers[sid]) {
+          // 本地模组（已在缓冲区，init 时按顺序解析）
+          var idxBefore = loadedAsars.length
+          var result = this.parseAndIndex(this._localBuffers[sid])
+          if (result) {
+            console.log('ModLoader: loaded local mod', sid)
+            loadedMods.push({ id: sid, asarIdx: idxBefore })
           }
         }
       }
@@ -566,6 +598,21 @@
       var resp = await fetch('./mods/mods.json')
       if (!resp.ok) return []
       return await resp.json()
+    },
+
+    // 读取 ASAR 的 metadata（不修改内部状态）
+    readAsarMeta: function (buffer) {
+      var parsed = parseAsar(buffer)
+      if (!parsed) return null
+      var meta = {}
+      var metaEntry = parsed.files.get('mods.json')
+      if (metaEntry) {
+        try {
+          var b = new Uint8Array(parsed.buffer, parsed.dataOffset + metaEntry.offset, metaEntry.size)
+          meta = JSON.parse(new TextDecoder('utf-8').decode(b))
+        } catch (e) {}
+      }
+      return meta
     },
 
     getFileIndex: function () {
