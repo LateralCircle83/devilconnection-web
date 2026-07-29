@@ -60,5 +60,12 @@
         "description": "游戏内 DEBUG 工具：数值编辑、存档导出、路线开关、成就补发等",
         "file": "dc_debug.asar",
         "version": "1.0.0"
+    },
+    {
+        "id": "dc_achievement",
+        "name": "虚拟成就系统",
+        "description": "Steam 风格成就弹窗：解锁特典、MP 收集、小剧场大满贯等",
+        "file": "dc_achievement.asar",
+        "version": "1.0.0"
     }
 ]

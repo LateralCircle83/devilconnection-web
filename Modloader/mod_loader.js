@@ -118,6 +118,7 @@
   }
 
   function createBlobURL(path) {
+    if (path && path.indexOf('?') > 0) path = path.split('?')[0]
     var key = normalizePath(path)
     var cached = blobURLCache[key]
     if (cached) return cached
@@ -366,6 +367,22 @@
         }
       } catch (e) { if (debug) console.warn('ModLoader: link interceptor failed', e) }
     }
+
+    // Intercept $.getScript (jQuery 在 mod_loader 前缓存了 document.createElement，
+    // 导致 wireScriptInterceptor 无法拦截 $.getScript 创建的 <script>)
+    try {
+      if (typeof $ !== 'undefined' && $.getScript) {
+        var _origGetScript = $.getScript
+        $.getScript = function (url, callback) {
+          var blobUrl = createBlobURL(url)
+          if (blobUrl) {
+            // $.ajax 不会给 blob URL 加 ?_=timestamp
+            return $.ajax({ url: blobUrl, dataType: 'script', cache: true }).done(callback)
+          }
+          return _origGetScript.call(this, url, callback)
+        }
+      }
+    } catch (e) { if (debug) console.warn('ModLoader: $.getScript override failed', e) }
 
     // Intercept img src via document.createElement, Image(), and innerHTML
     try {
