@@ -92,15 +92,15 @@ function renderConfigForm(schema) {
     var f = schema.fields[i]
     var val = saved[f.key] !== undefined ? saved[f.key] : f.default
     var inputId = 'cfg_' + f.key
-    html += '<div style="margin-bottom:12px;"><label for="' + inputId + '" style="display:block;font-size:13px;margin-bottom:4px;opacity:0.8;">' + esc(f.label || f.key) + '</label>'
+    html += '<div style="margin-bottom:12px;"><label for="' + inputId + '" style="display:block;font-size:13px;margin-bottom:4px;color:#7ea8b4;">' + esc(f.label || f.key) + '</label>'
     if (f.type === 'toggle') {
-      html += '<input type="checkbox" id="' + inputId + '" ' + (val ? 'checked' : '') + ' style="width:20px;height:20px;accent-color:#7c3aed;">'
+      html += '<input type="checkbox" id="' + inputId + '" ' + (val ? 'checked' : '') + ' style="width:20px;height:20px;accent-color:#ffc1b3;">'
     } else if (f.type === 'number') {
-      html += '<input type="number" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:14px;box-sizing:border-box;">'
+      html += '<input type="number" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
     } else if (f.type === 'password') {
-      html += '<input type="password" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:14px;box-sizing:border-box;">'
+      html += '<input type="password" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
     } else {
-      html += '<input type="text" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:rgba(0,0,0,0.3);color:#e2e8f0;font-size:14px;box-sizing:border-box;">'
+      html += '<input type="text" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
     }
     if (f.help) html += '<div style="font-size:11px;opacity:0.4;margin-top:3px;">' + esc(f.help) + '</div>'
     html += '</div>'
@@ -127,6 +127,23 @@ function saveModConfig() {
 function closeModConfig() {
   document.getElementById('mod_config_modal').style.display = 'none'
   _cfgModId = null; _cfgSchema = null
+}
+
+// ===== 存档清除 =====
+function clearAllSaves() {
+  if (!confirm('确定清除所有存档数据？此操作不可恢复！')) return
+  if (!confirm('再次确认：所有存档数据将被永久删除！')) return
+  try {
+    var storage = window.api && window.api.storage
+    var keys = []
+    if (storage && storage.keys) { try { keys = storage.keys() || [] } catch(e) {} }
+    else { keys = Object.keys(localStorage).filter(function(k) { return k.indexOf('DevilConnection') >= 0 || k.indexOf('_tyrano_') >= 0 }) }
+    for (var i = 0; i < keys.length; i++) {
+      if (storage && storage.removeItem) storage.removeItem(keys[i])
+      else localStorage.removeItem(keys[i])
+    }
+    alert('已清除 ' + keys.length + ' 个存档数据')
+  } catch(e) { alert('清除失败: ' + e.message) }
 }
 
 // ===== 存档导出 =====
@@ -164,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (target) target.style.display = 'block'
     document.querySelectorAll('.nav-item').forEach(function(n) {
       var act = n.getAttribute('data-page') === page
-      n.style.background = act ? 'rgba(124,58,237,0.15)' : 'transparent'
-      n.style.color = act ? '#a78bfa' : '#94a3b8'
+      n.style.background = act ? '#7ea8b4' : 'transparent'
+      n.style.color = act ? '#fff' : '#7ea8b4'
       n.style.fontWeight = act ? '600' : '400'
     })
   }

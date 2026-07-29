@@ -109,9 +109,9 @@
     <div id="tyrano_click_to_start">
       <!-- 左侧导航栏 -->
       <div class="mgr-sidebar">
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:10px;">
-          <div style="width:30px;height:30px;background:linear-gradient(135deg,#7c3aed,#a855f7);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:13px;">D</div>
-          <span style="font-size:13px;font-weight:700;color:#f1f5f9;">管理器</span>
+        <div class="logo">
+          <div class="logo-icon">D</div>
+          <span class="logo-text">管理器</span>
         </div>
         <div class="nav-item" data-page="console"><span style="font-size:16px;margin-right:8px;">🏠</span> 控制台</div>
         <div class="nav-item" data-page="mods"><span style="font-size:16px;margin-right:8px;">🧩</span> 模组</div>
@@ -124,20 +124,20 @@
 
         <!-- 控制台 -->
         <div class="page" id="page-console">
-          <h1 style="font-size:24px;font-weight:700;color:#f1f5f9;margin-bottom:2px;">恶魔连结 · 静态 Web 版</h1>
-          <p style="font-size:12px;color:#64748b;margin-bottom:28px;">DevilConnection Static Web Port</p>
-          <button id="start_game_btn" style="width:100%;padding:16px 0;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:12px;color:#fff;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 5px 16px rgba(124,58,237,0.3);transition:transform 0.15s;margin-bottom:20px;" onmouseover="this.style.transform='scale(1.01)'" onmouseout="this.style.transform='scale(1)'">🚀 启动游戏</button>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-            <div class="tile-btn" data-target="mods" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.15s;text-align:center;" onmouseover="this.style.background='rgba(124,58,237,0.06)';this.style.borderColor='rgba(124,58,237,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='rgba(255,255,255,0.05)'"><div style="font-size:26px;margin-bottom:6px;">🧩</div><div style="font-weight:600;font-size:13px;">模组管理</div></div>
-            <div class="tile-btn" data-target="saves" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.15s;text-align:center;" onmouseover="this.style.background='rgba(124,58,237,0.06)';this.style.borderColor='rgba(124,58,237,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='rgba(255,255,255,0.05)'"><div style="font-size:26px;margin-bottom:6px;">💾</div><div style="font-weight:600;font-size:13px;">存档管理</div></div>
+          <h1>恶魔连结 · 静态 Web 版</h1>
+          <p class="page-sub">DevilConnection Static Web Port</p>
+          <button id="start_game_btn" class="btn-start">🚀 启动游戏</button>
+          <div class="tile-grid">
+            <div class="tile-btn" data-target="mods"><div class="tile-icon">🧩</div><div class="tile-label">模组管理</div></div>
+            <div class="tile-btn" data-target="saves"><div class="tile-icon">💾</div><div class="tile-label">存档管理</div></div>
           </div>
         </div>
 
         <!-- 模组 -->
         <div class="page" id="page-mods" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;">模组管理</h2>
-            <button id="load_local_btn" style="padding:8px 16px;background:rgba(124,58,237,0.1);border:1px solid rgba(124,58,237,0.15);border-radius:8px;color:#a78bfa;font-size:12px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(124,58,237,0.18)'" onmouseout="this.style.background='rgba(124,58,237,0.1)'">+ 添加模组</button>
+            <h2>模组管理</h2>
+            <button id="load_local_btn" class="btn-add-mod">+ 添加模组</button>
             <input id="asar_file_input" type="file" accept=".asar" style="display:none">
           </div>
           <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;overflow:hidden;">
@@ -148,23 +148,24 @@
 
         <!-- 存档 -->
         <div class="page" id="page-saves" style="display:none;">
-          <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:16px;">存档管理</h2>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px;">
-            <div onclick="toggleSaveImport()" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.15s;text-align:center;" onmouseover="this.style.background='rgba(124,58,237,0.06)';this.style.borderColor='rgba(124,58,237,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='rgba(255,255,255,0.05)'"><div style="font-size:26px;margin-bottom:6px;">📤</div><div style="font-weight:600;font-size:13px;">导出存档</div></div>
-            <div onclick="document.getElementById('import_save_input').click()" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:20px;cursor:pointer;transition:all 0.15s;text-align:center;" onmouseover="this.style.background='rgba(124,58,237,0.06)';this.style.borderColor='rgba(124,58,237,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='rgba(255,255,255,0.05)'"><div style="font-size:26px;margin-bottom:6px;">📥</div><div style="font-weight:600;font-size:13px;">导入存档</div></div>
+          <h2>存档管理</h2>
+          <div class="save-grid">
+            <div class="save-btn" onclick="toggleSaveImport()"><div class="tile-icon">📤</div><div class="tile-label">导出存档</div></div>
+            <div class="save-btn" onclick="document.getElementById('import_save_input').click()"><div class="tile-icon">📥</div><div class="tile-label">导入存档</div></div>
+            <div class="save-btn btn-danger" onclick="clearAllSaves()"><div class="tile-icon">🗑️</div><div class="tile-label">清除存档</div></div>
           </div>
           <input id="import_save_input" type="file" accept=".zip" style="display:none">
         </div>
 
         <!-- 关于 -->
         <div class="page" id="page-about" style="display:none;">
-          <h2 style="font-size:20px;font-weight:700;color:#f1f5f9;margin-bottom:14px;">关于</h2>
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:18px 22px;max-width:520px;line-height:1.6;font-size:13px;color:#94a3b8;">
-            <p style="margin-bottom:10px;"><b style="color:#e2e8f0;">恶魔连结</b>（DevilConnection）视觉小说的浏览器移植版。</p>
-            <p style="margin-bottom:10px;">基于 TyranoScript V5 引擎，通过浏览器适配层使其可在普通浏览器中运行，支持 DCML 规范的 .asar 模组加载。</p>
-            <p style="margin-bottom:10px;">模组加载器参考自 <a href="https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader" target="_blank" style="color:#a78bfa;text-decoration:none;">DevilConnection_ModLoader (Rebuild)</a></p>
-            <p style="margin-bottom:10px;">Fork 自 <a href="https://github.com/lllhhh2282/devilconnection-web" target="_blank" style="color:#a78bfa;text-decoration:none;">lllhhh2282/devilconnection-web</a></p>
-            <p>请通过 <a href="https://store.steampowered.com/app/3054820/_/" target="_blank" style="color:#a78bfa;text-decoration:none;">Steam</a> 等正规渠道购买正版游戏。</p>
+          <h2>关于</h2>
+          <div class="about-card">
+            <p><b>恶魔连结</b>（DevilConnection）视觉小说的浏览器移植版。</p>
+            <p>基于 TyranoScript V5 引擎，通过浏览器适配层使其可在普通浏览器中运行，支持 DCML 规范的 .asar 模组加载。</p>
+            <p>模组加载器参考自 <a href="https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader" target="_blank">DevilConnection_ModLoader (Rebuild)</a></p>
+            <p>Fork 自 <a href="https://github.com/lllhhh2282/devilconnection-web" target="_blank">lllhhh2282/devilconnection-web</a></p>
+            <p>请通过 <a href="https://store.steampowered.com/app/3054820/_/" target="_blank">Steam</a> 等正规渠道购买正版游戏。</p>
           </div>
         </div>
 
@@ -214,13 +215,13 @@
     </div>
 
     <!-- 模组配置弹窗模板 -->
-    <div id="mod_config_modal" style="display:none;position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:2147483647;background:rgba(15,12,24,0.85);align-items:center;justify-content:center;font-family:sans-serif;color:#e2e8f0;touch-action:pan-y;" onclick="if(event.target===this)closeModConfig()" ontouchmove="event.stopPropagation()">
-      <div style="background:rgba(30,27,48,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:24px 28px;width:min(460px,90vw);max-height:80vh;overflow-y:auto;text-align:left;touch-action:pan-y;" onclick="event.stopPropagation()" ontouchmove="event.stopPropagation()">
-        <div id="mod_config_title" style="font-size:17px;font-weight:700;color:#f1f5f9;margin-bottom:16px;"></div>
+    <div id="mod_config_modal" onclick="if(event.target===this)closeModConfig()" ontouchmove="event.stopPropagation()">
+      <div class="modal-panel" onclick="event.stopPropagation()" ontouchmove="event.stopPropagation()">
+        <div id="mod_config_title" class="modal-title"></div>
         <div id="mod_config_fields"></div>
-        <div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;">
-          <button onclick="closeModConfig()" style="padding:8px 20px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">取消</button>
-          <button onclick="saveModConfig()" style="padding:8px 20px;background:linear-gradient(135deg,#7c3aed,#a855f7);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(124,58,237,0.3);transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">保存配置</button>
+        <div class="modal-footer">
+          <button onclick="closeModConfig()" class="btn-cancel">取消</button>
+          <button onclick="saveModConfig()" class="btn-save">保存配置</button>
         </div>
       </div>
     </div>
