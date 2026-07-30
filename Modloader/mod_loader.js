@@ -34,44 +34,65 @@
     return path.replace(/^\.\//, '').replace(/\\/g, '/')
   }
 
-  // ASAR format (DCML variant):
-  //   [4 bytes: count] [4 bytes: total header len]
-  //   [4 bytes: ???] [4 bytes: JSON len]
-  //   [JSON header] [padding] [file data]
-  // Offsets in JSON are relative to data section start.
+  var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || 9007199254740991
+
+  function align4(n) {
+    return n + ((4 - (n % 4)) % 4)
+  }
+
+  function normalizeAsarPath(path) {
+    return normalizePath(String(path || '')).replace(/^\/+/, '')
+  }
+
+  function readUint32LE(view, offset) {
+    return view.getUint32(offset, true)
+  }
+
+  function toArrayBuffer(buffer) {
+    if (buffer instanceof ArrayBuffer) return buffer
+    if (buffer && buffer.buffer instanceof ArrayBuffer) {
+      return buffer.buffer.slice(buffer.byteOffset || 0, (buffer.byteOffset || 0) + buffer.byteLength)
+    }
+    return null
+  }
+
+  function parseNonNegativeInteger(value) {
+    var n
+    if (typeof value === 'number') {
+      n = value
+    } else if (typeof value === 'string' && /^[0-9]+$/.test(value)) {
+      n = Number(value)
+    } else {
+      return null
+    }
+    if (!isFinite(n) || n < 0 || Math.floor(n) !== n || n > MAX_SAFE_INTEGER) return null
+    return n
+  }
+
+  // ASAR format (Electron/DCML):
+  //   [4 bytes: pickle size] [4 bytes: header blob size]
+  //   [4 bytes: padded JSON size + 4] [4 bytes: JSON byte length]
+  //   [JSON header] [NUL padding to 4 bytes] [file data]
+  // Offsets in JSON are relative to the file data section start.
   function parseAsar(buffer) {
-    var view = new Uint8Array(buffer)
-    // Search for { in first 1024 bytes
-    var bracePos = -1
-    for (var i = 0; i < 1024 && i < view.length; i++) {
-      if (view[i] === 0x7b) {
-        bracePos = i
-        break
-      }
-    }
-    if (bracePos === -1) {
-      console.warn('ModLoader: ASAR header JSON not found')
+    buffer = toArrayBuffer(buffer)
+    if (!buffer || buffer.byteLength < 16) {
+      console.warn('ModLoader: ASAR header too short')
       return null
     }
-    // Find matching }
-    var depth = 0
-    var endPos = -1
-    for (var i = bracePos; i < view.length; i++) {
-      if (view[i] === 0x7b) depth++
-      if (view[i] === 0x7d) {
-        depth--
-        if (depth === 0) {
-          endPos = i
-          break
-        }
-      }
-    }
-    if (endPos === -1) {
-      console.warn('ModLoader: ASAR header JSON incomplete')
+
+    var dataView = new DataView(buffer)
+    var headerJsonSize = readUint32LE(dataView, 12)
+    var headerStart = 16
+    var headerEnd = headerStart + headerJsonSize
+    var dataOffset = headerStart + align4(headerJsonSize)
+    if (headerJsonSize <= 0 || headerEnd > buffer.byteLength || dataOffset > buffer.byteLength) {
+      console.warn('ModLoader: ASAR header size is invalid')
       return null
     }
+
     var dec = new TextDecoder('utf-8')
-    var headerJson = dec.decode(new Uint8Array(buffer, bracePos, endPos - bracePos + 1))
+    var headerJson = dec.decode(new Uint8Array(buffer, headerStart, headerJsonSize))
     var header
     try {
       header = JSON.parse(headerJson)
@@ -79,12 +100,9 @@
       console.warn('ModLoader: ASAR header parse failed', e)
       return null
     }
-    // Data section starts after JSON end + any padding
-    var dataOffset = endPos + 1
-    while (dataOffset < view.length && (view[dataOffset] === 0x00 || view[dataOffset] === 0x0a || view[dataOffset] === 0x0d)) {
-      dataOffset++
-    }
+
     var files = new Map()
+    var dataSize = buffer.byteLength - dataOffset
     function walk(tree, prefix) {
       if (!tree || !tree.files) return
       for (var name in tree.files) {
@@ -93,10 +111,19 @@
         if (entry.files) {
           walk(entry, path)
         } else if (entry.offset !== undefined && entry.size !== undefined) {
-          files.set(path, {
-            offset: parseInt(entry.offset, 10),
-            size: parseInt(entry.size, 10),
-          })
+          var offset = parseNonNegativeInteger(entry.offset)
+          var size = parseNonNegativeInteger(entry.size)
+          var normalizedPath = normalizeAsarPath(path)
+          if (
+            offset === null ||
+            size === null ||
+            offset > dataSize ||
+            size > dataSize - offset
+          ) {
+            console.warn('ModLoader: invalid ASAR entry skipped', normalizedPath)
+            continue
+          }
+          files.set(normalizedPath, { offset: offset, size: size })
         }
       }
     }
@@ -108,9 +135,43 @@
   var fileIndex = new Map()
   var debug = window.__MOD_DEBUG__
   var blobURLCache = {}
+  var interceptorsWired = false
+  var initPromise = null
+  var initialized = false
+  var initSelectedKey = ''
+
+  function revokeBlobURLs() {
+    for (var k in blobURLCache) URL.revokeObjectURL(blobURLCache[k])
+    blobURLCache = {}
+  }
+
+  function resetLoadedState() {
+    revokeBlobURLs()
+    loadedAsars = []
+    fileIndex = new Map()
+  }
+
+  function readParsedFileData(asar, path) {
+    if (!asar || !asar.files) return null
+    var entry = asar.files.get(normalizeAsarPath(path))
+    if (!entry) return null
+    return new Uint8Array(asar.buffer, asar.dataOffset + entry.offset, entry.size)
+  }
+
+  function readParsedFileText(asar, path) {
+    var data = readParsedFileData(asar, path)
+    if (!data) return null
+    return new TextDecoder('utf-8').decode(data)
+  }
+
+  function readParsedFileJSON(asar, path) {
+    var text = readParsedFileText(asar, path)
+    if (!text) return null
+    try { return JSON.parse(text) } catch (e) { return null }
+  }
 
   function readFileData(path) {
-    var entry = fileIndex.get(normalizePath(path))
+    var entry = fileIndex.get(normalizeAsarPath(path))
     if (!entry) return null
     var asar = loadedAsars[entry.asarIdx]
     if (!asar) return null
@@ -130,16 +191,15 @@
     return url
   }
 
-  window.addEventListener('beforeunload', function () {
-    for (var k in blobURLCache) URL.revokeObjectURL(blobURLCache[k])
-    blobURLCache = {}
-  })
+  window.addEventListener('beforeunload', revokeBlobURLs)
 
   function execHookCode(hookCode) {
     try {
       ;(function () {
         var origEAPI = window.electronAPI
-        window.electronAPI = window.ModCompat || {}
+        // DCML hooks expect the Electron preload-compatible API here,
+        // not the ModCompat root object.
+        window.electronAPI = (window.ModCompat && window.ModCompat.electronAPI) || origEAPI || {}
         try { eval(hookCode) } finally {
           if (origEAPI === undefined) delete window.electronAPI
           else window.electronAPI = origEAPI
@@ -168,7 +228,9 @@
   }
 
   function wireInterceptors() {
+    if (interceptorsWired) return
     if (typeof $ === 'undefined') return
+    interceptorsWired = true
 
     // Global XHR override — catches XMLHttpRequest (Howler, older code)
     try {
@@ -406,6 +468,8 @@
       var _htmlDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')
       if (_htmlDesc && _htmlDesc.set) {
         var _htmlSet = _htmlDesc.set
+        // Updating only the setter preserves the native getter on this accessor property,
+        // so $.html() / element.innerHTML reads continue to work normally.
         Object.defineProperty(Element.prototype, 'innerHTML', {
           set: function (html) {
             if (typeof html === 'string' && html.indexOf('<img') !== -1) {
@@ -460,24 +524,17 @@
       var idx = loadedAsars.length
       loadedAsars.push(parsed)
       parsed.files.forEach(function (info, path) {
-        fileIndex.set(path, { asarIdx: idx, offset: info.offset, size: info.size })
-        if (path.indexOf('data/') === 0) {
-          fileIndex.set('./' + path, {
+        var normalizedPath = normalizeAsarPath(path)
+        fileIndex.set(normalizedPath, { asarIdx: idx, offset: info.offset, size: info.size })
+        if (normalizedPath.indexOf('data/') === 0) {
+          fileIndex.set('./' + normalizedPath, {
             asarIdx: idx,
             offset: info.offset,
             size: info.size,
           })
         }
       })
-      var meta = {}
-      var metaEntry = parsed.files.get('mods.json')
-      if (metaEntry) {
-        try {
-          var metaBytes = new Uint8Array(parsed.buffer, parsed.dataOffset + metaEntry.offset, metaEntry.size)
-          var metaText = new TextDecoder('utf-8').decode(metaBytes)
-          meta = JSON.parse(metaText)
-        } catch (e) { console.warn('ModLoader: failed to parse mod meta', e) }
-      }
+      var meta = readParsedFileJSON(parsed, 'mods.json') || {}
       return { meta: meta, asarIdx: idx }
     },
 
@@ -490,61 +547,82 @@
       try {
         var parsed = parseAsar(buffer)
         if (parsed) {
-          var entry = parsed.files.get('config.schema.json')
-          if (entry) {
-            var b = new Uint8Array(parsed.buffer, parsed.dataOffset + entry.offset, entry.size)
-            this._localConfigs[id] = JSON.parse(new TextDecoder('utf-8').decode(b))
-          }
+          var schema = readParsedFileJSON(parsed, 'config.schema.json')
+          if (schema) this._localConfigs[id] = schema
+          else delete this._localConfigs[id]
         }
       } catch (e) {}
     },
 
     init: async function (selectedIds) {
-      var resp = await fetch('./mods/mods.json')
-      var modList = []
-      if (resp.ok) modList = await resp.json()
-      // 按 selectedIds 的顺序加载模组（拖拽排序后的顺序）
-      var modMap = {}
-      for (var mi = 0; mi < modList.length; mi++) modMap[modList[mi].id] = modList[mi]
-      var loadedMods = []
-      for (var si = 0; si < selectedIds.length; si++) {
-        var sid = selectedIds[si]
-        var entry = modMap[sid]
-        if (entry) {
-          // 常规模组
-          var idxBefore = loadedAsars.length
-          var ok = await this.loadAsar('./mods/' + entry.file)
-          if (ok) {
-            console.log('ModLoader: loaded', entry.name)
-            loadedMods.push({ id: entry.id, asarIdx: idxBefore })
-          }
-        } else if (this._localBuffers[sid]) {
-          // 本地模组（已在缓冲区，init 时按顺序解析）
-          var idxBefore = loadedAsars.length
-          var result = this.parseAndIndex(this._localBuffers[sid])
-          if (result) {
-            console.log('ModLoader: loaded local mod', sid)
-            loadedMods.push({ id: sid, asarIdx: idxBefore })
+      selectedIds = selectedIds || []
+      var selectedKey = selectedIds.join('\n')
+      if (initialized) {
+        if (selectedKey !== initSelectedKey) console.warn('ModLoader: init already completed; ignoring different mod selection')
+        return true
+      }
+      if (initPromise) return initPromise
+
+      var self = this
+      initPromise = (async function () {
+        resetLoadedState()
+        var resp = await fetch('./mods/mods.json')
+        var modList = []
+        if (resp.ok) modList = await resp.json()
+        // 按 selectedIds 的顺序加载模组（拖拽排序后的顺序）
+        var modMap = {}
+        for (var mi = 0; mi < modList.length; mi++) modMap[modList[mi].id] = modList[mi]
+        var loadedMods = []
+        for (var si = 0; si < selectedIds.length; si++) {
+          var sid = selectedIds[si]
+          var entry = modMap[sid]
+          if (entry) {
+            // 常规模组
+            var idxBefore = loadedAsars.length
+            var ok = await self.loadAsar('./mods/' + entry.file)
+            if (ok) {
+              console.log('ModLoader: loaded', entry.name)
+              loadedMods.push({ id: entry.id, asarIdx: idxBefore })
+            }
+          } else if (self._localBuffers[sid]) {
+            // 本地模组（已在缓冲区，init 时按顺序解析）
+            var idxBeforeLocal = loadedAsars.length
+            var result = self.parseAndIndex(self._localBuffers[sid])
+            if (result) {
+              console.log('ModLoader: loaded local mod', sid)
+              loadedMods.push({ id: sid, asarIdx: idxBeforeLocal })
+            }
           }
         }
-      }
-      wireInterceptors()
-      // Execute hook.js from ALL loaded ASARs (including local ones from parseAndIndex)
-      for (var i = 0; i < loadedAsars.length; i++) {
-        var asar = loadedAsars[i]
-        var hookEntry = asar.files.get('hook.js')
-        if (hookEntry) {
-          var hookBytes = new Uint8Array(asar.buffer, asar.dataOffset + hookEntry.offset, hookEntry.size)
-          execHookCode(new TextDecoder('utf-8').decode(hookBytes))
+        wireInterceptors()
+        // Execute hook.js from ALL loaded ASARs (including local ones from parseAndIndex)
+        for (var i = 0; i < loadedAsars.length; i++) {
+          var asar = loadedAsars[i]
+          var hookEntry = asar.files.get('hook.js')
+          if (hookEntry) {
+            var hookBytes = readParsedFileData(asar, 'hook.js')
+            if (hookBytes) execHookCode(new TextDecoder('utf-8').decode(hookBytes))
+          }
         }
+        initialized = true
+        initSelectedKey = selectedKey
+        console.log('ModLoader: ready,', fileIndex.size, 'files indexed')
+        return true
+      })()
+
+      try {
+        return await initPromise
+      } catch (e) {
+        resetLoadedState()
+        throw e
+      } finally {
+        initPromise = null
       }
-      console.log('ModLoader: ready,', fileIndex.size, 'files indexed')
-      return true
     },
 
     // Check if a file exists in mod file index
     hasFile: function (path) {
-      return fileIndex.has(normalizePath(path))
+      return fileIndex.has(normalizeAsarPath(path))
     },
 
     // Read a text file from mod file index
@@ -565,9 +643,7 @@
     getAsarFileText: function (asarIdx, path) {
       var asar = loadedAsars[asarIdx]
       if (!asar) return null
-      var entry = asar.files.get(normalizePath(path))
-      if (!entry) return null
-      return new TextDecoder('utf-8').decode(new Uint8Array(asar.buffer, asar.dataOffset + entry.offset, entry.size))
+      return readParsedFileText(asar, path)
     },
 
     getAsarFileJSON: function (asarIdx, path) {
@@ -621,15 +697,19 @@
     readAsarMeta: function (buffer) {
       var parsed = parseAsar(buffer)
       if (!parsed) return null
-      var meta = {}
-      var metaEntry = parsed.files.get('mods.json')
-      if (metaEntry) {
-        try {
-          var b = new Uint8Array(parsed.buffer, parsed.dataOffset + metaEntry.offset, metaEntry.size)
-          meta = JSON.parse(new TextDecoder('utf-8').decode(b))
-        } catch (e) {}
-      }
-      return meta
+      return readParsedFileJSON(parsed, 'mods.json') || {}
+    },
+
+    readAsarFileText: function (buffer, path) {
+      var parsed = parseAsar(buffer)
+      if (!parsed) return null
+      return readParsedFileText(parsed, path)
+    },
+
+    readAsarFileJSON: function (buffer, path) {
+      var parsed = parseAsar(buffer)
+      if (!parsed) return null
+      return readParsedFileJSON(parsed, path)
     },
 
     getFileIndex: function () {
@@ -639,7 +719,8 @@
     readFile: function (path) {
       var data = readFileData(path)
       if (!data) return null
-      return data.buffer
+      // Return only the requested ASAR entry, not the whole underlying package buffer.
+      return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength)
     },
 
     resolveURL: tryResolveURL,

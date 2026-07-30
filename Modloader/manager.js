@@ -29,44 +29,9 @@ function openModConfig(modId, modName) {
     if (!r.ok) throw new Error('fetch failed: ' + r.status)
     return r.arrayBuffer()
   }).then(function(buf) {
-    var view = new Uint8Array(buf)
-    var bracePos = -1
-    for (var i = 0; i < 2048 && i < view.length; i++) {
-      if (view[i] === 0x7b) { bracePos = i; break }
-    }
-    if (bracePos === -1) throw new Error('JSON { not found')
-    var depth = 0, endPos = -1
-    for (var i = bracePos; i < view.length; i++) {
-      if (view[i] === 0x7b) depth++
-      if (view[i] === 0x7d) { depth--; if (depth === 0) { endPos = i; break } }
-    }
-    if (endPos === -1) throw new Error('JSON } not found')
-    var dec = new TextDecoder('utf-8')
-    var headerJson = dec.decode(new Uint8Array(buf, bracePos, endPos - bracePos + 1))
-    var header = JSON.parse(headerJson)
-
-    var schemaOffset = null, schemaSize = null
-    function findFile(tree, prefix) {
-      if (!tree || !tree.files) return
-      for (var name in tree.files) {
-        var entry = tree.files[name]
-        var path = prefix ? prefix + '/' + name : name
-        if (entry.files) { findFile(entry, path) }
-        else if (path === 'config.schema.json' || path === '/config.schema.json') {
-          schemaOffset = parseInt(entry.offset, 10)
-          schemaSize = parseInt(entry.size, 10)
-          return
-        }
-      }
-    }
-    findFile(header, '')
-    if (schemaOffset === null) throw new Error('config.schema.json not in ASAR')
-
-    var dOff = endPos + 1
-    while (dOff < view.length && (view[dOff] === 0 || view[dOff] === 10 || view[dOff] === 13)) dOff++
-    var schemaBytes = new Uint8Array(buf, dOff + schemaOffset, schemaSize)
-    var schemaText = dec.decode(schemaBytes)
-    var schema = JSON.parse(schemaText)
+    if (!window.ModLoader || !ModLoader.readAsarFileJSON) throw new Error('ModLoader parser unavailable')
+    var schema = ModLoader.readAsarFileJSON(buf, 'config.schema.json')
+    if (!schema) throw new Error('config.schema.json not in ASAR')
     renderConfigForm(schema)
   }).catch(function(e) {
     console.warn('ModLoader: config load error', e)
@@ -300,25 +265,61 @@ document.addEventListener('DOMContentLoaded', function() {
   importInput.addEventListener('change', function(e) {
     var file = e.target.files && e.target.files[0]
     if (!file) return
+    if (_importingSave) { importInput.value = ''; return }
+    _importingSave = true
+
+    function finishImport() {
+      _importingSave = false
+      importInput.value = ''
+    }
+
     var reader = new FileReader()
     reader.onload = function(ev) {
-      try {
-        JSZip.loadAsync(ev.target.result).then(function(zip) {
-          var done = 0
-          zip.forEach(function(p, f) {
+      if (typeof JSZip === 'undefined') {
+        alert('导入失败：JSZip 库未加载')
+        finishImport()
+        return
+      }
+      JSZip.loadAsync(ev.target.result).then(function(zip) {
+        var storage = window.api && window.api.storage
+        var tasks = []
+        var imported = 0
+        var failed = 0
+
+        zip.forEach(function(p, f) {
+          if (f.dir || !/\.sav$/i.test(p)) return
+          tasks.push(
             f.async('string').then(function(content) {
               var key = decodeURIComponent(p.replace(/\.sav$/i, ''))
-              var storage = window.api && window.api.storage
               if (storage && storage.setItem) storage.setItem(key, content)
               else localStorage.setItem(key, content)
-              done++
+              imported++
+            }).catch(function(err) {
+              console.warn('存档导入失败:', p, err)
+              failed++
             })
-          })
-          setTimeout(function() { alert('导入完成 (' + done + ' 个存档)') }, 500)
-        }).catch(function() { alert('导入失败：ZIP 格式错误') })
-      } catch(e) { alert('导入失败') }
+          )
+        })
+
+        if (tasks.length === 0) {
+          alert('ZIP 中没有可导入的 .sav 存档文件')
+          return null
+        }
+
+        return Promise.all(tasks).then(function() {
+          if (storage && storage.flush) return storage.flush()
+        }).then(function() {
+          alert('导入完成：' + imported + ' 个成功，' + failed + ' 个失败')
+        })
+      }).catch(function(err) {
+        console.warn('存档导入失败:', err)
+        alert('导入失败：ZIP 格式错误或读取失败')
+      }).then(finishImport)
+    }
+    reader.onerror = function() {
+      alert('导入失败：无法读取文件')
+      finishImport()
     }
     reader.readAsArrayBuffer(file)
-    importInput.value = ''
   })
 })

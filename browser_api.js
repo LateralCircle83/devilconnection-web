@@ -22,7 +22,7 @@
   window.USE_SWEETALERT2 = false
   window.TYRANO.USE_SWEETALERT2 = false
 
-  // 激進設定：読み込んだセーブデータが壊れていたら全ストレージを消去
+  // Corrupt save data is isolated by key; full storage clear requires user confirmation.
   window.TYRANO.clear_on_corrupt_save = true
 
   function getBasePath() {
@@ -262,22 +262,52 @@
   }
 
   var storage = createIndexedDBStorage()
+  var corruptSaveNoticeShown = false
 
   function clearSaveDataOnCorruption(key, rawValue, error) {
     if (!window.TYRANO || !window.TYRANO.clear_on_corrupt_save) return
     console.error('Save data corruption detected for key:', key, error)
     try {
-      storage.clear()
+      if (key) {
+        storage.removeItem(key)
+        if (storage.flush) {
+          storage.flush().catch(function (e) {
+            console.error('Failed to flush after corrupt save removal:', e)
+          })
+        }
+      }
+      if (corruptSaveNoticeShown) return
+      corruptSaveNoticeShown = true
       if (typeof Swal !== 'undefined') {
         Swal.fire({
-          icon: 'error',
-          text: '存档数据损坏，已清除所有存储数据。请刷新页面后重新导入或开始游戏。',
+          icon: 'warning',
+          title: '存档数据损坏',
+          text:
+            '已删除损坏的存储项：' +
+            (key || '未知') +
+            '。其他存档与模组配置已保留。如果游戏仍无法启动，可以清除全部浏览器存储。',
+          showDenyButton: true,
+          confirmButtonText: '保留其他数据',
+          denyButtonText: '清除全部存储',
+        }).then(function (result) {
+          if (!result.isDenied) return
+          storage.clear()
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              icon: 'info',
+              text: '已清除全部浏览器存储。请刷新页面后重新导入或开始游戏。',
+            })
+          }
         })
       } else {
-        alert('存档数据损坏，已清除所有存储数据。请刷新页面后重新导入或开始游戏。')
+        alert(
+          '存档数据损坏，已删除损坏的存储项：' +
+            (key || '未知') +
+            '。其他数据已保留。'
+        )
       }
     } catch (e) {
-      console.error('Failed to clear storage after corruption:', e)
+      console.error('Failed to isolate corrupt save data:', e)
     }
   }
 

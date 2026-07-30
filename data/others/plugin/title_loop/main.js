@@ -11,6 +11,7 @@ TYRANO.kag.dc = {
     const secondaryAudioBuffer = secondaryAudio || primaryAudio
 
     const mediaSource = new MediaSource()
+    mediaSource.__dcLoopEnded = false
     const videoType = 'video/mp4; codecs="avc1.640028"'
     const audioType = 'audio/mpeg'
 
@@ -27,6 +28,42 @@ TYRANO.kag.dc = {
         videoLoaded = false,
         audioLoaded = false
 
+      const pendingBufferAppends = new Map()
+      const waitingBuffers = new Set()
+      const waitForBufferUpdate = buffer => {
+        if (waitingBuffers.has(buffer)) return
+        waitingBuffers.add(buffer)
+        buffer.addEventListener(
+          'updateend',
+          function flushPendingAppend() {
+            waitingBuffers.delete(buffer)
+            const append = pendingBufferAppends.get(buffer)
+            pendingBufferAppends.delete(buffer)
+            append && appendWhenBufferIdle(buffer, append)
+          },
+          { once: true }
+        )
+      }
+
+      const appendWhenBufferIdle = (buffer, append) => {
+        if (!buffer || mediaSource.__dcLoopEnded || mediaSource.readyState !== 'open') return
+        if (buffer.updating) {
+          pendingBufferAppends.set(buffer, append)
+          waitForBufferUpdate(buffer)
+          return
+        }
+        try {
+          append()
+        } catch (e) {
+          if (e && e.name === 'InvalidStateError' && buffer.updating) {
+            pendingBufferAppends.set(buffer, append)
+            waitForBufferUpdate(buffer)
+            return
+          }
+          console.warn('title_loop: SourceBuffer append skipped', e)
+        }
+      }
+
       const makeBufferGaplessWith = (gapless, buffer) => {
         const offset =
           buffer.buffered.length > 0
@@ -39,18 +76,22 @@ TYRANO.kag.dc = {
       }
 
       const appendVideoLoopBuffer = () => {
-        videoBuffer.onupdateend ||
-          (videoBuffer.onupdateend = function (e) {
-            const buffered = e.target.buffered
-            this.timestampOffset = buffered.end(buffered.length - 1)
-          })
-        videoBuffer.appendBuffer(secondaryVideoBuffer)
+        appendWhenBufferIdle(videoBuffer, () => {
+          videoBuffer.onupdateend ||
+            (videoBuffer.onupdateend = function (e) {
+              const buffered = e.target.buffered
+              this.timestampOffset = buffered.end(buffered.length - 1)
+            })
+          videoBuffer.appendBuffer(secondaryVideoBuffer)
+        })
       }
 
       const appendAudioLoopBuffer = () => {
-        const gapless = llama.parseGaplessData(secondaryAudioBuffer)
-        makeBufferGaplessWith(gapless, audioBuffer)
-        audioBuffer.appendBuffer(secondaryAudioBuffer)
+        appendWhenBufferIdle(audioBuffer, () => {
+          const gapless = llama.parseGaplessData(secondaryAudioBuffer)
+          makeBufferGaplessWith(gapless, audioBuffer)
+          audioBuffer.appendBuffer(secondaryAudioBuffer)
+        })
       }
 
       const play = function () {
@@ -114,6 +155,7 @@ TYRANO.kag.dc = {
 
     const mediaSource = this.mediaSources[name]
     if (!mediaSource) return
+    mediaSource.__dcLoopEnded = true
 
     const endStream = () => {
       const isUpdating = Array.from(mediaSource.sourceBuffers).some(

@@ -122,3 +122,59 @@
 ### 修复：$.loadQueue 拦截器
 - 引擎文件改为动态加载后，`$.loadQueue` 在拦截器安装时可能尚未定义
 - 添加 `typeof _origLoadQueue === 'function'` 守卫，避免 `undefined.call()` 报错
+
+## 2026-07-29
+
+### 修复：file input 导致存档报错 InvalidStateError
+- UI 改版后页面上存在 `<input type="file">`（ASAR 加载 + 存档导入）
+- 引擎 `kag.menu.js:819` 的 `$('input').val(inputVal)` 遍历所有 input 恢复值
+- 浏览器禁止程序化修改 file input 的值（只能清空），抛出 `InvalidStateError`
+- 错误导致 `mpGauge.unwrap()` 等清理代码不执行，MP 包裹层残留在 DOM 中
+- 修复：patch `$.fn.val` 跳过滤 `type=file` 的元素
+
+### 修复：动态加载时序导致 file input 残留于 DOM
+- 动态加载期间覆盖层尚未移除，file input 在存档时仍存在
+- `finishStart()` 移除整个覆盖层后 file input 随之消失，问题彻底解决
+
+### 修复：$.getScript 拦截盲区
+- jQuery 在 `mod_loader.js` 执行前就缓存了 `document.createElement`
+- `wireScriptInterceptor` 无法拦截 `$.getScript` 内部创建的 `<script>` 元素
+- 引擎 `@loadjs` 标签走 `$.getScript`，模组无法替换加载的 JS 文件
+- 修复：直接 hook `$.getScript` 顶层 API，用 `$.ajax({ cache: true })` 加载 blob URL
+- 同时避免 jQuery 自动添加 `?_=timestamp` 破坏 data/blob URL 的问题
+
+### 修复：createBlobURL 未处理 query string
+- `createBlobURL` 直接拿带 `?v=timestamp` 的路径查 fileIndex，查不到
+- 修复：在 `createBlobURL` 入口处剥离 query string
+
+### 新增：虚拟成就系统模组
+- 解密 `虚拟成就.asar` 并重打包为 `dc_achievement.asar`
+- 替换原版 TyranoSteamworks（浏览器中为无操作空壳），提供 Steam 风格成就弹窗
+- 成就通过 `[steam_achievement_activate name="XXX"]` 触发
+- 图标存于 `data/image/steam/`
+
+## 2026-07-31
+
+### 修复：模组读取与 hook 兼容暗病
+- `ModLoader.readFile()` 只返回目标 ASAR entry 的 `ArrayBuffer`，避免泄露整个底层 ASAR buffer
+- `hook.js` 执行期间的 `window.electronAPI` 改为指向 `window.ModCompat.electronAPI`
+- 为 `innerHTML` 拦截补充注释，说明只覆盖 setter 时原生 getter 会被保留
+
+### 加固：ASAR parser 与模组初始化流程
+- ASAR header 改为按头部 JSON 长度字段读取，不再扫描裸 `{}` 匹配
+- 校验每个 entry 的 `offset/size` 为有限非负整数，并跳过越界条目
+- 新增 `readAsarFileText()` / `readAsarFileJSON()` 公共读取方法
+- 模组配置弹窗复用 `ModLoader` 的公共 ASAR parser，不再复制一套解析逻辑
+- `wireInterceptors()` 增加一次性 guard，避免重复包裹全局拦截器
+- `ModLoader.init()` 增加幂等保护和状态清理，避免重复初始化导致索引、hook、blob URL 污染
+
+### 修复：存档导入与坏存档处理
+- 存档 ZIP 导入等待所有 `.sav` 异步写入完成后再提示结果
+- 导入完成后显式调用 `storage.flush()`，降低慢机器或立即关页时丢写入的风险
+- JSON 校验失败时只隔离损坏 key，不再直接清空全部 IndexedDB / localStorage
+- 损坏存档提示改为让用户选择是否清除全部存储
+
+### 修复：标题循环 MediaSource 偶发 InvalidStateError
+- 标题/背景循环视频追加 `SourceBuffer` 前检查 `updating` 状态
+- 当浏览器仍在处理上一次 append/remove 时，延迟到 `updateend` 后再追加
+- teardown 时标记 MediaSource 已结束，避免 pending append 在释放后继续写入
