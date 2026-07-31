@@ -1,12 +1,119 @@
-                @font-face {                    font-family: 'memoir';                    src: url('../../data/others/fangzhengpangwa.ttf') format('truetype'),                    url('../../data/others/fangzhengpangwa.woff') format('woff'),                    url('../../data/others/fangzhengpangwa.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'craftmincho';                    src: url('../../data/others/jiangxizhuokai.ttf') format('truetype'),                    url('../../data/others/jiangxizhuokai.woff') format('woff'),                    url('../../data/others/jiangxizhuokai.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'HeadUpDaisy';                    src: url('../../data/others/hanyixiangsu.ttf') format('truetype'),                    url('../../data/others/HeadUpDaisy.woff') format('woff'),                    url('../../data/others/HeadUpDaisy.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'KaiseiDecol-Bold';                    src: url('../../data/others/jiangchengjiexin.ttf') format('truetype'),                    url('../../data/others/KaiseiDecol-Bold.woff') format('woff'),                    url('../../data/others/KaiseiDecol-Bold.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'DZUYOKU';                    src: url('../../data/others/jiangxizhuokai.ttf') format('truetype'),                    url('../../data/others/DZUYOKU.woff') format('woff'),                    url('../../data/others/DZUYOKU.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'YOWAKU';                    src: url('../../data/others/sanjihuanle.ttf') format('truetype'),                    url('../../data/others/YOWAKU.woff') format('woff'),                    url('../../data/others/YOWAKU.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'Yawamin';                    src: url('../../data/others/FZQKBYSJW.TTF') format('truetype'),                    url('../../data/others/Yawamin.woff') format('woff'),                    url('../../data/others/Yawamin.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'kowai';                    src: url('../../data/others/JasonHandwriting7p.ttf') format('truetype'),                    url('../../data/others/kowai.woff') format('woff'),                    url('../../data/others/kowai.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'puikko';                    src: url('../../data/others/fangzhengpangwa.ttf') format('truetype'),                    url('../../data/others/puikko.woff') format('woff'),                    url('../../data/others/puikko.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'funwari-round';                    src: url('../../data/others/shangshouruantang.ttf') format('truetype'),                    url('../../data/others/funwari-round.woff') format('woff'),                    url('../../data/others/funwari-round.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }                
-                @font-face {                    font-family: 'ttt';                    src: url('../../data/others/craftmincho.ttf') format('truetype'),                    url('../../data/others/craftmincho.woff') format('woff'),                    url('../../data/others/craftmincho.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }
-                @font-face {                    font-family: 'GakuFont';                    src: url('../../data/others/HeadUpDaisy.ttf') format('truetype'),                    url('../../data/others/HeadUpDaisy.woff') format('woff'),                    url('../../data/others/HeadUpDaisy.eot') format('eot')                    ;                    font-weight:normal;font-style:normal;                }
+@font-face {
+  font-family: 'memoir';
+  src: url('../../data/others/fangzhengpangwa.ttf') format('truetype'),
+    url('../../data/others/fangzhengpangwa.woff') format('woff'),
+    url('../../data/others/fangzhengpangwa.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'craftmincho';
+  src: url('../../data/others/jiangxizhuokai.ttf') format('truetype'),
+    url('../../data/others/jiangxizhuokai.woff') format('woff'),
+    url('../../data/others/jiangxizhuokai.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HeadUpDaisy';
+  src: url('../../data/others/hanyixiangsu.ttf') format('truetype'),
+    url('../../data/others/HeadUpDaisy.woff') format('woff'),
+    url('../../data/others/HeadUpDaisy.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KaiseiDecol-Bold';
+  src: url('../../data/others/jiangchengjiexin.ttf') format('truetype'),
+    url('../../data/others/KaiseiDecol-Bold.woff') format('woff'),
+    url('../../data/others/KaiseiDecol-Bold.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DZUYOKU';
+  src: url('../../data/others/jiangxizhuokai.ttf') format('truetype'),
+    url('../../data/others/DZUYOKU.woff') format('woff'),
+    url('../../data/others/DZUYOKU.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'YOWAKU';
+  src: url('../../data/others/sanjihuanle.ttf') format('truetype'),
+    url('../../data/others/YOWAKU.woff') format('woff'),
+    url('../../data/others/YOWAKU.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Yawamin';
+  src: url('../../data/others/FZQKBYSJW.TTF') format('truetype'),
+    url('../../data/others/Yawamin.woff') format('woff'),
+    url('../../data/others/Yawamin.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'kowai';
+  src: url('../../data/others/JasonHandwriting7p.ttf') format('truetype'),
+    url('../../data/others/kowai.woff') format('woff'),
+    url('../../data/others/kowai.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'puikko';
+  src: url('../../data/others/fangzhengpangwa.ttf') format('truetype'),
+    url('../../data/others/puikko.woff') format('woff'),
+    url('../../data/others/puikko.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'funwari-round';
+  src: url('../../data/others/shangshouruantang.ttf') format('truetype'),
+    url('../../data/others/funwari-round.woff') format('woff'),
+    url('../../data/others/funwari-round.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'ttt';
+  src: url('../../data/others/craftmincho.ttf') format('truetype'),
+    url('../../data/others/craftmincho.woff') format('woff'),
+    url('../../data/others/craftmincho.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GakuFont';
+  src: url('../../data/others/HeadUpDaisy.ttf') format('truetype'),
+    url('../../data/others/HeadUpDaisy.woff') format('woff'),
+    url('../../data/others/HeadUpDaisy.eot') format('eot');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

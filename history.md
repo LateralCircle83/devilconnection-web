@@ -178,3 +178,27 @@
 - 标题/背景循环视频追加 `SourceBuffer` 前检查 `updating` 状态
 - 当浏览器仍在处理上一次 append/remove 时，延迟到 `updateend` 后再追加
 - teardown 时标记 MediaSource 已结束，避免 pending append 在释放后继续写入
+
+### 改进：本地 ASAR 模组导入行为
+- 本地导入 ASAR 后重绘模组列表时保留当前勾选状态，避免已取消的内置模组被重新勾选
+- 同 `id` 的本地 ASAR 在当前页面会话内替换列表中的旧条目，刷新后仍恢复内置模组列表
+- `ModLoader.init()` 加载同 `id` 模组时优先使用本地导入 buffer，使本地 ASAR 可按同一套排序规则覆盖内置模组
+- 模组配置按钮改为事件绑定并转义 `data-id`，避免模组名或 id 中的特殊字符破坏 inline handler
+
+### 改进：模组资源路径归一化
+- `ModLoader` 统一将同源绝对 URL、根路径 URL、相对路径归一为 ASAR 内相对路径
+- 集中处理 `?query` / `#hash` 后缀，保留并扩展旧的 `?_=timestamp` 兼容
+- `createBlobURL()` / `readFileData()` / `resolveURL()` 统一走 `normalizeAsarPath()`，移除拦截器内重复的 query stripping 和 `./data` fallback 分支
+- 跨源 URL、`blob:`、`data:`、`javascript:` 不参与 ASAR 匹配，避免误拦截外部资源
+
+### 修复：ASAR JSON 与存储清理细节
+- ASAR header、`mods.json`、`config.schema.json` 等 JSON 解析前剥离 UTF-8 BOM，兼容带 BOM 的模组元数据
+- `browser_api.js` 的 `storage.clear()` 返回 Promise，并等待 IndexedDB `clear()` 事务完成
+- 全清存储前取消 pending flush timer，避免清理后旧 pending 写入再次落盘
+- 坏存档提示中的“清除全部存储”改为等待清理完成后再提示用户
+- 管理器的“清除全部存档”在提示完成前显式等待 `storage.flush()`
+
+### 轻量缓解：字体加载 fallback 警告
+- 为 `tyrano/css/font.css` 中的 `@font-face` 添加 `font-display: swap`
+- 仅声明浏览器可先显示 fallback 字体、字体加载完成后再替换，不改变字体文件、预加载脚本或资源路径
+- 格式化 `font.css`，方便后续继续评估 WOFF2 / 字体子集化 / 标题页 preload 精简

@@ -107,7 +107,12 @@ function clearAllSaves() {
       if (storage && storage.removeItem) storage.removeItem(keys[i])
       else localStorage.removeItem(keys[i])
     }
-    alert('已清除 ' + keys.length + ' 个存档数据')
+    var flushed = storage && storage.flush ? storage.flush() : Promise.resolve()
+    Promise.resolve(flushed).then(function() {
+      alert('已清除 ' + keys.length + ' 个存档数据')
+    }).catch(function(e) {
+      alert('清除失败: ' + (e && e.message ? e.message : e))
+    })
   } catch(e) { alert('清除失败: ' + e.message) }
 }
 
@@ -161,7 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var sortable = null
 
+  function getCheckedState() {
+    var state = {}
+    var cbs = modListEl.querySelectorAll('.mod_checkbox')
+    for (var i = 0; i < cbs.length; i++) {
+      state[cbs[i].getAttribute('data-id')] = cbs[i].checked
+    }
+    return state
+  }
+
   function renderModList(mods) {
+    var checkedState = getCheckedState()
     _modList = mods || []
     if (!mods || mods.length === 0) {
       modListEl.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px;">没有可用模组</div>'
@@ -170,17 +185,26 @@ document.addEventListener('DOMContentLoaded', function() {
     var html = ''
     for (var i = 0; i < mods.length; i++) {
       var m = mods[i]
+      var checked = Object.prototype.hasOwnProperty.call(checkedState, m.id) ? checkedState[m.id] : true
       html +=
-        '<div class="mod-item" data-id="' + m.id + '">' +
+        '<div class="mod-item" data-id="' + esc(m.id) + '">' +
         '<span class="drag-handle">☰☰</span>' +
         '<div class="mod-info"><div class="mod-name">' + esc(m.name) + '</div>' +
         (m.description ? '<div class="mod-desc">' + esc(m.description) + '</div>' : '') +
         (m.isLocal ? '<span class="mod-local">[本地]</span>' : '') + '</div>' +
-        '<button onclick="openModConfig(\'' + m.id + '\',\'' + esc(m.name) + '\');event.stopPropagation()" class="btn-config">配置</button>' +
-        '<input type="checkbox" class="mod_checkbox" data-id="' + m.id + '" checked>' +
+        '<button type="button" class="btn-config" data-id="' + esc(m.id) + '">配置</button>' +
+        '<input type="checkbox" class="mod_checkbox" data-id="' + esc(m.id) + '"' + (checked ? ' checked' : '') + '>' +
         '</div>'
     }
     modListEl.innerHTML = html
+    modListEl.querySelectorAll('.btn-config').forEach(function(btn) {
+      btn.addEventListener('click', function(event) {
+        event.stopPropagation()
+        var modId = this.getAttribute('data-id')
+        var modEntry = _modList.find(function(x) { return x.id === modId })
+        openModConfig(modId, modEntry ? modEntry.name : modId)
+      })
+    })
     if (sortable) sortable.destroy()
     sortable = new Sortable(modListEl, {
       handle: '.drag-handle', animation: 150, ghostClass: 'ghost',
@@ -247,10 +271,17 @@ document.addEventListener('DOMContentLoaded', function() {
         var name = meta.name || file.name.replace(/\.asar$/, '')
         var localId = meta.id || file.name.replace(/\.asar$/, '').replace(/[^a-zA-Z0-9_]/g, '_')
         ModLoader.registerLocalMod(localId, buf.slice(0))
-        _modList.push({ id: localId, name: name, description: (meta && meta.description) || '本地加载的 ASAR 模组', author: '', isLocal: true })
+        var localEntry = { id: localId, name: name, description: (meta && meta.description) || '本地加载的 ASAR 模组', author: '', isLocal: true }
+        var replaced = false
+        for (var i = 0; i < _modList.length; i++) {
+          if (_modList[i].id === localId) {
+            _modList[i] = localEntry
+            replaced = true
+            break
+          }
+        }
+        if (!replaced) _modList.push(localEntry)
         renderModList(_modList)
-        var cbs = document.querySelectorAll('.mod_checkbox')
-        if (cbs.length) cbs[cbs.length - 1].checked = true
       }
     }
     reader.readAsArrayBuffer(file)

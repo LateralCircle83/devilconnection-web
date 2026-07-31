@@ -76,6 +76,7 @@
         try {
           localStorage.clear()
         } catch (e) {}
+        return Promise.resolve()
       },
       keys: function () {
         var result = {}
@@ -198,12 +199,25 @@
       clear: function () {
         this.cache = {}
         this.pending = {}
+        if (this._flushTimer) {
+          clearTimeout(this._flushTimer)
+          this._flushTimer = null
+        }
         var that = this
-        this.init().then(function () {
-          if (!that._useIndexedDB) return
-          var tx = that.db.transaction(STORE_NAME, 'readwrite')
-          var store = tx.objectStore(STORE_NAME)
-          store.clear()
+        return this.init().then(function () {
+          if (!that._useIndexedDB) return fallback.clear.call(that)
+          return new Promise(function (resolve, reject) {
+            var tx = that.db.transaction(STORE_NAME, 'readwrite')
+            var store = tx.objectStore(STORE_NAME)
+            tx.oncomplete = resolve
+            tx.onerror = function () {
+              reject(tx.error)
+            }
+            tx.onabort = function () {
+              reject(tx.error)
+            }
+            store.clear()
+          })
         })
       },
 
@@ -291,13 +305,16 @@
           denyButtonText: '清除全部存储',
         }).then(function (result) {
           if (!result.isDenied) return
-          storage.clear()
-          if (typeof Swal !== 'undefined') {
-            Swal.fire({
-              icon: 'info',
-              text: '已清除全部浏览器存储。请刷新页面后重新导入或开始游戏。',
-            })
-          }
+          Promise.resolve(storage.clear()).then(function () {
+            if (typeof Swal !== 'undefined') {
+              Swal.fire({
+                icon: 'info',
+                text: '已清除全部浏览器存储。请刷新页面后重新导入或开始游戏。',
+              })
+            }
+          }).catch(function (e) {
+            console.error('Failed to clear storage after corruption:', e)
+          })
         })
       } else {
         alert(

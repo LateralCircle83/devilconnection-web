@@ -30,8 +30,52 @@
     return mimeMap[ext] || 'application/octet-stream'
   }
 
+  function stripURLSuffix(path) {
+    var value = String(path || '')
+    var q = value.indexOf('?')
+    var h = value.indexOf('#')
+    var cut = -1
+    if (q >= 0) cut = q
+    if (h >= 0 && (cut < 0 || h < cut)) cut = h
+    return cut >= 0 ? value.slice(0, cut) : value
+  }
+
+  function safeDecodePath(path) {
+    try { return decodeURIComponent(path) } catch (e) { return path }
+  }
+
+  function getPageBasePath() {
+    var loc = typeof location !== 'undefined' ? location : null
+    var path = (loc && loc.pathname) || '/'
+    return path.charAt(path.length - 1) === '/' ? path : path.replace(/\/[^\/]*$/, '/')
+  }
+
+  function isSameOriginURL(url) {
+    var loc = typeof location !== 'undefined' ? location : null
+    if (loc && url.protocol === 'file:' && loc.protocol === 'file:') return true
+    return !!(loc && url.origin === loc.origin)
+  }
+
+  function pathFromSameOriginURL(path) {
+    var raw = String(path || '')
+    if (!raw || /^(?:blob|data|javascript):/i.test(raw)) return ''
+    try {
+      var loc = typeof location !== 'undefined' ? location : null
+      var url = loc ? new URL(raw, loc.href) : null
+      if (!url) return stripURLSuffix(raw)
+      if (!isSameOriginURL(url)) return stripURLSuffix(raw)
+      var pathname = safeDecodePath(url.pathname)
+      var basePath = safeDecodePath(getPageBasePath())
+      if (pathname.indexOf(basePath) === 0) pathname = pathname.slice(basePath.length)
+      else pathname = pathname.replace(/^\/+/, '')
+      return pathname
+    } catch (e) {
+      return stripURLSuffix(raw)
+    }
+  }
+
   function normalizePath(path) {
-    return path.replace(/^\.\//, '').replace(/\\/g, '/')
+    return String(path || '').replace(/^\.\//, '').replace(/\\/g, '/')
   }
 
   var MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER || 9007199254740991
@@ -41,11 +85,20 @@
   }
 
   function normalizeAsarPath(path) {
-    return normalizePath(String(path || '')).replace(/^\/+/, '')
+    return normalizePath(pathFromSameOriginURL(path)).replace(/^\/+/, '')
   }
 
   function readUint32LE(view, offset) {
     return view.getUint32(offset, true)
+  }
+
+  function stripJSONBOM(text) {
+    return text && text.charCodeAt(0) === 0xfeff ? text.slice(1) : text
+  }
+
+  function parseJSONText(text) {
+    if (!text) return null
+    try { return JSON.parse(stripJSONBOM(text)) } catch (e) { return null }
   }
 
   function toArrayBuffer(buffer) {
@@ -95,7 +148,7 @@
     var headerJson = dec.decode(new Uint8Array(buffer, headerStart, headerJsonSize))
     var header
     try {
-      header = JSON.parse(headerJson)
+      header = JSON.parse(stripJSONBOM(headerJson))
     } catch (e) {
       console.warn('ModLoader: ASAR header parse failed', e)
       return null
@@ -166,8 +219,7 @@
 
   function readParsedFileJSON(asar, path) {
     var text = readParsedFileText(asar, path)
-    if (!text) return null
-    try { return JSON.parse(text) } catch (e) { return null }
+    return parseJSONText(text)
   }
 
   function readFileData(path) {
@@ -179,13 +231,12 @@
   }
 
   function createBlobURL(path) {
-    if (path && path.indexOf('?') > 0) path = path.split('?')[0]
-    var key = normalizePath(path)
+    var key = normalizeAsarPath(path)
     var cached = blobURLCache[key]
     if (cached) return cached
-    var data = readFileData(path)
+    var data = readFileData(key)
     if (!data) return null
-    var blob = new Blob([data], { type: getMime(path) })
+    var blob = new Blob([data], { type: getMime(key) })
     var url = URL.createObjectURL(blob)
     blobURLCache[key] = url
     return url
@@ -216,7 +267,7 @@
           get: desc.get,
           set: function (v) {
             if (typeof v === 'string') {
-              var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+              var blob = createBlobURL(v)
               if (blob) { desc.set.call(this, blob); return }
             }
             desc.set.call(this, v)
@@ -237,12 +288,7 @@
       var _origXHROpen = XMLHttpRequest.prototype.open
       XMLHttpRequest.prototype.open = function (method, url) {
         if (typeof url === 'string') {
-          var blob = createBlobURL(normalizePath(url).replace(/^\.\//, ''))
-          if (!blob) blob = createBlobURL(normalizePath(url))
-          if (!blob) {
-            var norm = normalizePath(url)
-            blob = createBlobURL(norm.replace(/^data\//, 'data/')) || createBlobURL(norm.replace(/^data\//, './data/'))
-          }
+          var blob = createBlobURL(url)
           if (blob) {
             return _origXHROpen.call(this, method, blob, true)
           }
@@ -257,12 +303,7 @@
       window.fetch = function (input, init) {
         var url = typeof input === 'string' ? input : (input && input.url ? input.url : '')
         if (url) {
-          var blobUrl = createBlobURL(normalizePath(url).replace(/^\.\//, ''))
-          if (!blobUrl) blobUrl = createBlobURL(normalizePath(url))
-          if (!blobUrl) {
-            var norm = normalizePath(url)
-            blobUrl = createBlobURL(norm.replace(/^data\//, 'data/')) || createBlobURL(norm.replace(/^data\//, './data/'))
-          }
+          var blobUrl = createBlobURL(url)
           if (blobUrl) {
             // blobUrl is a blob: URL string; fetch it via native fetch to get actual data
             return _origFetch(blobUrl)
@@ -274,7 +315,7 @@
 
     var _origLoadText = $.loadText
     $.loadText = function (path, cb) {
-      var data = readFileData(path) || readFileData(normalizePath(path).replace(/^data\//, './data/'))
+      var data = readFileData(path)
       if (data) {
         cb && cb(new TextDecoder('utf-8').decode(data))
         return
@@ -294,7 +335,7 @@
       var _rewriteCSS = function (val) {
         if (typeof val !== 'string') return val
         return val.replace(/url\(['"]?([^'"\)]+)['"]?\)/g, function (m, url) {
-          var blob = createBlobURL(url) || createBlobURL(normalizePath(url).replace(/^\.\//, ''))
+          var blob = createBlobURL(url)
           return blob ? 'url("' + blob + '")' : m
         })
       }
@@ -317,15 +358,13 @@
       Element.prototype.setAttribute = function (attr, value) {
         if (attr === 'src' && (this.tagName === 'IMG' || this instanceof HTMLImageElement || this.tagName === 'VIDEO' || this instanceof HTMLVideoElement || this.tagName === 'SCRIPT' || this instanceof HTMLScriptElement)) {
           if (typeof value === 'string') {
-            var blob = createBlobURL(value) || createBlobURL(normalizePath(value))
-            if (!blob) blob = createBlobURL(normalizePath(value).replace(/^data\//, './data/'))
+            var blob = createBlobURL(value)
             if (blob) { _origSetAttr.call(this, attr, blob); return }
           }
         }
         if (attr === 'href' && (this.tagName === 'LINK' || this instanceof HTMLLinkElement)) {
           if (typeof value === 'string') {
-            var blob = createBlobURL(value) || createBlobURL(normalizePath(value))
-            if (!blob) blob = createBlobURL(normalizePath(value).replace(/^data\//, './data/'))
+            var blob = createBlobURL(value)
             if (blob) { _origSetAttr.call(this, attr, blob); return }
           }
         }
@@ -339,7 +378,7 @@
       CSSStyleDeclaration.prototype.setProperty = function (prop, value) {
         if (typeof value === 'string' && (prop === 'background-image' || prop === 'background')) {
           value = value.replace(/url\(['"]?([^'"\)]+)['"]?\)/g, function (m, url) {
-            var blob = createBlobURL(url) || createBlobURL(normalizePath(url))
+            var blob = createBlobURL(url)
             return blob ? 'url("' + blob + '")' : m
           })
         }
@@ -352,7 +391,7 @@
       var _origAudio = window.Audio
       window.Audio = function (src) {
         if (typeof src === 'string') {
-          var blob = createBlobURL(src) || createBlobURL(normalizePath(src))
+          var blob = createBlobURL(src)
           if (blob) src = blob
         }
         var a = new _origAudio(src)
@@ -374,7 +413,7 @@
             get: desc.get,
             set: function (v) {
               if (typeof v === 'string') {
-                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                var blob = createBlobURL(v)
                 if (blob) { desc.set.call(this, blob); return }
               }
               desc.set.call(this, v)
@@ -399,7 +438,7 @@
             get: desc.get,
             set: function (v) {
               if (typeof v === 'string') {
-                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                var blob = createBlobURL(v)
                 if (blob) { desc.set.call(this, blob); return }
               }
               desc.set.call(this, v)
@@ -419,7 +458,7 @@
             get: desc.get,
             set: function (v) {
               if (typeof v === 'string') {
-                var blob = createBlobURL(v) || createBlobURL(normalizePath(v)) || createBlobURL(normalizePath(v).replace(/^data\//, './data/'))
+                var blob = createBlobURL(v)
                 if (blob) { desc.set.call(this, blob); return }
               }
               desc.set.call(this, v)
@@ -474,7 +513,7 @@
           set: function (html) {
             if (typeof html === 'string' && html.indexOf('<img') !== -1) {
               html = html.replace(/(<img[^>]*\s)src="([^"]+)"/gi, function (m, pre, url) {
-                var blob = createBlobURL(url) || createBlobURL(normalizePath(url))
+                var blob = createBlobURL(url)
                 return blob ? pre + 'src="' + blob + '"' : m
               })
             }
@@ -486,7 +525,7 @@
   }
 
   function tryResolveURL(url) {
-    var normalized = normalizePath(url)
+    var normalized = normalizeAsarPath(url)
     if (fileIndex.has(normalized)) return createBlobURL(normalized)
     var stripped = normalized.replace(/^data\//, '')
     if (stripped !== normalized && fileIndex.has(stripped)) return createBlobURL(stripped)
@@ -576,21 +615,21 @@
         for (var si = 0; si < selectedIds.length; si++) {
           var sid = selectedIds[si]
           var entry = modMap[sid]
-          if (entry) {
+          if (self._localBuffers[sid]) {
+            // 本地导入的同 id ASAR 只在当前页面会话内覆盖内置模组。
+            var idxBeforeLocal = loadedAsars.length
+            var result = self.parseAndIndex(self._localBuffers[sid])
+            if (result) {
+              console.log('ModLoader: loaded local mod', sid)
+              loadedMods.push({ id: sid, asarIdx: idxBeforeLocal })
+            }
+          } else if (entry) {
             // 常规模组
             var idxBefore = loadedAsars.length
             var ok = await self.loadAsar('./mods/' + entry.file)
             if (ok) {
               console.log('ModLoader: loaded', entry.name)
               loadedMods.push({ id: entry.id, asarIdx: idxBefore })
-            }
-          } else if (self._localBuffers[sid]) {
-            // 本地模组（已在缓冲区，init 时按顺序解析）
-            var idxBeforeLocal = loadedAsars.length
-            var result = self.parseAndIndex(self._localBuffers[sid])
-            if (result) {
-              console.log('ModLoader: loaded local mod', sid)
-              loadedMods.push({ id: sid, asarIdx: idxBeforeLocal })
             }
           }
         }
@@ -635,8 +674,7 @@
     // Read a JSON file from mod file index
     getFileJSON: function (path) {
       var text = this.getFileText(path)
-      if (!text) return null
-      try { return JSON.parse(text) } catch (e) { return null }
+      return parseJSONText(text)
     },
 
     // Read a text file from a specific ASAR by index
@@ -648,8 +686,7 @@
 
     getAsarFileJSON: function (asarIdx, path) {
       var text = this.getAsarFileText(asarIdx, path)
-      if (!text) return null
-      try { return JSON.parse(text) } catch (e) { return null }
+      return parseJSONText(text)
     },
 
     // Get/set mod config (stored in localStorage)
