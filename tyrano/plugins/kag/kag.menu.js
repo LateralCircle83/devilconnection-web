@@ -804,19 +804,22 @@ tyrano.plugin.kag.menu = {
           })
           mpGauge.css('max-height', '').removeClass('mp_gauge').wrap(mpWrapper)
           $('.suisyou').hide()
-          const inputVal = $('input').val()
-          $('input').val('')
           var opt = {
             scale: 1,
             height: parseInt($('#tyrano_base').css('height').replace('px', '')),
             width: parseInt($('#tyrano_base').css('width').replace('px', '')),
+            onclone: function (clonedDoc, clonedElement) {
+              var textInputs = clonedElement.querySelectorAll(
+                'input:not([type]),input[type="text"],input[type="search"],input[type="url"],input[type="tel"],input[type="email"],input[type="password"],textarea'
+              )
+              for (var i = 0; i < textInputs.length; i++) textInputs[i].value = ''
+            },
           }
           html2canvas(tmp_base.get(0), opt).then(function (canvas) {
             $('#tyrano_base').find('.tmp_video_canvas').remove()
             var img_code = that.createImgCode(canvas)
             completeImage(img_code)
           })
-          $('input').val(inputVal)
           $('.suisyou').show()
           mpGauge.unwrap().addClass('mp_gauge').css('max-height', mpHeight)
           tmp_base.hide()
