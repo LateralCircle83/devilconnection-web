@@ -1,3 +1,11 @@
+/*
+ * Minimal DCML hook compatibility shim.
+ *
+ * Provides the Electron preload / Node-like globals that renderer hook.js
+ * files commonly expect. This is intentionally not a general filesystem:
+ * config files are mapped to localStorage and resource overrides belong in
+ * mod_loader.js.
+ */
 ;(function () {
   if (window.ModCompat) return
 
@@ -75,7 +83,7 @@
       },
     },
 
-    // Shim for process (extends the one from browser_api.js)
+    // Shim for process (extends the one from BrowserShell/browser_api.js)
     process: {
       platform: 'browser',
       env: {},

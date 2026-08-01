@@ -41,37 +41,37 @@ npm run serve
 ```
 ├── index.html              # 浏览器渲染入口（模组选择 + 启动）
 ├── Modloader/              # 模组加载系统
-│   ├── mod_loader.js       # 模组加载器（ASAR 解析、资源拦截、DCML API）
-│   └── mod_compat.js       # Electron API 兼容层（fs/path/Buffer/electronAPI）
-├── browser_api.js          # 浏览器版 API shim
-├── electron_latest.js      # 浏览器适配层
-│
+├── BrowserShell/           # 浏览器壳子 / 原 Electron preload 替代层
 ├── mods/                   # 模组目录（.asar 文件 + mods.json 索引）
+├── tool/                   # 本地开发/自检脚本
 ├── data/                   # 游戏内容资源
 ├── tyrano/                 # TyranoScript 引擎
 └── _electron_legacy/       # 旧 Electron 桌面封装（参考）
+```
+
+## 开发与自检
+
+细节文档按所有权拆分，避免同一事实散落多处：
+
+- [`Modloader/README.md`](Modloader/README.md)：模组加载器边界、约束与验证清单
+- [`tool/README.md`](tool/README.md)：本地工具与 DevTools 调试入口
+- [`AGENTS.md`](AGENTS.md)：给 AI agent 的项目结构、运行时事实与维护约定
+
+```bash
+npm run check:modloader
+node tool/check_css.mjs
 ```
 
 ## 模组
 
 模组规格遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。
 
-### 内置模组
-
-| 模组 | 说明 | 来源 |
-|------|------|------|
-| 库啪哒呀小剧场 (`dc_theatre`) | AI 驱动的即兴对话剧场 | [Luoyu-Wangchai/DevilConnection_Theatre](https://github.com/Luoyu-Wangchai/DevilConnection_Theatre) |
-| 库皮亚交互增强 (`dc_kupya_plus`) | 后日谈库皮亚新增台词与书架互动 | [Luoyu-Wangchai/DevilConnection_KupyaPlus](https://github.com/Luoyu-Wangchai/DevilConnection_KupyaPlus) |
-| 更多二世多艾露 (`dc_doeru_plus`) | 二世多艾露专属剧情 | [Luoyu-Wangchai/DevilConnection_DoeruPlus](https://github.com/Luoyu-Wangchai/DevilConnection_DoeruPlus) |
-| DC Toolbox (`dc_toolbox`) | 游戏内调试工具（数值编辑、收藏解锁、变速等） | DCML 社区 |
-| 模组工坊 (`dc_modworkshop`) | 模组入口统一管理界面 | DCML 内置 |
-
 ## 模组加载方式
 
 1. **服务端模组**：将 `.asar` 放入 `mods/` 目录，在 `mods/mods.json` 注册，页面刷新后出现在模组列表
 2. **本地加载**：在模组选择页点「+ 加载本地 ASAR」，选择 `.asar` 文件临时加载（刷新后消失）
 
-模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)，模组开发请遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。加密模组（`DC_ENC_v1`）可用 `解密/decrypt.js` 解密。
+当前内置模组列表以 [`mods/mods.json`](mods/mods.json) 为准。模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)，模组开发请遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。加密模组（`DC_ENC_v1`）排查工具见 [`tool/README.md`](tool/README.md)。
 
 ## 许可证与声明
 

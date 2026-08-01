@@ -4,6 +4,7 @@
   "description": "DevilConnection browser port",
   "private": true,
   "scripts": {
+    "check:modloader": "node tool/modloader_self_check.mjs",
     "serve": "npx -y serve ."
   }
 }

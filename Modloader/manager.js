@@ -1,4 +1,6 @@
 // ===== 模组管理器 - 配置逻辑 =====
+// Browser UI for selecting, importing, ordering, and configuring mods.
+// ASAR parsing and resource interception stay in mod_loader.js.
 var _cfgModId = null, _cfgSchema = null
 var _modList = []
 var _importingSave = false
@@ -219,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
-  var engineScripts = ['tyrano/lang.js','tyrano/libs.js','tyrano/tyrano.js','tyrano/tyrano.base.js','tyrano/plugins/kag/kag.js','tyrano/plugins/kag/kag.event.js','tyrano/plugins/kag/kag.key_mouse.js','tyrano/plugins/kag/kag.layer.js','tyrano/plugins/kag/kag.menu.js','tyrano/plugins/kag/kag.parser.js','tyrano/plugins/kag/kag.rider.js','tyrano/plugins/kag/kag.studio.js','tyrano/plugins/kag/kag.tag_audio.js','tyrano/plugins/kag/kag.tag_camera.js','tyrano/plugins/kag/kag.tag_ext.js','tyrano/plugins/kag/kag.tag_system.js','tyrano/plugins/kag/kag.tag_vchat.js','tyrano/plugins/kag/kag.tag_ar.js','tyrano/plugins/kag/kag.tag_three.js','tyrano/plugins/kag/kag.tag.js','data/system/KeyConfig.js','electron_latest.js']
+  var engineScripts = ['tyrano/lang.js','tyrano/libs.js','tyrano/tyrano.js','tyrano/tyrano.base.js','tyrano/plugins/kag/kag.js','tyrano/plugins/kag/kag.event.js','tyrano/plugins/kag/kag.key_mouse.js','tyrano/plugins/kag/kag.layer.js','tyrano/plugins/kag/kag.menu.js','tyrano/plugins/kag/kag.parser.js','tyrano/plugins/kag/kag.rider.js','tyrano/plugins/kag/kag.studio.js','tyrano/plugins/kag/kag.tag_audio.js','tyrano/plugins/kag/kag.tag_camera.js','tyrano/plugins/kag/kag.tag_ext.js','tyrano/plugins/kag/kag.tag_system.js','tyrano/plugins/kag/kag.tag_vchat.js','tyrano/plugins/kag/kag.tag_ar.js','tyrano/plugins/kag/kag.tag_three.js','tyrano/plugins/kag/kag.tag.js','data/system/KeyConfig.js','BrowserShell/electron_latest.js']
 
   function loadEngine(index) {
     if (index >= engineScripts.length) { finishStart(); return }

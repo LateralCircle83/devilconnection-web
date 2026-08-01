@@ -1,3 +1,11 @@
+/*
+ * Browser DCML mod loader.
+ *
+ * Owns ASAR parsing, resource override indexing, browser resource
+ * interception, hook.js execution, and the public window.ModLoader API.
+ * Manager UI and Electron/Node compatibility shims live in manager.js and
+ * mod_compat.js respectively; keep those boundaries separate.
+ */
 ;(function () {
   if (window.ModLoader) return
 
@@ -717,7 +725,7 @@
       } else if (TYRANO && TYRANO.kag && TYRANO.kag.tmp && TYRANO.kag.tmp.audio_context) {
         TYRANO.kag.tmp.audio_context.resume()
       }
-      // Check if TYRANO.init exists (electron_latest.js wraps it)
+      // Check if TYRANO.init exists (BrowserShell/electron_latest.js wraps it)
       if (TYRANO && TYRANO.init) {
         TYRANO.init()
       }

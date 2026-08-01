@@ -2,6 +2,10 @@
   /**
    * Browser adaptation layer for TyranoScript.
    * Replaces Electron/NW.js specific behavior with browser equivalents.
+   *
+   * Boundary: this file runs after the Tyrano engine is available and patches
+   * engine behavior. Browser preload shims belong in BrowserShell/browser_api.js;
+   * DCML mod loading belongs under Modloader/.
    */
 
   /**

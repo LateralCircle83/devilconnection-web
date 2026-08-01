@@ -1,6 +1,10 @@
 /**
  * 调试菜单
- * config.ks 调用，提供场景跳转、标签触发、Ending 跳转、KS 执行、sf/存储 编辑
+ *
+ * 当前浏览器移植版的实际调试菜单入口由 dc_debug.asar 注入。
+ * 本文件在汉化后的主场景流程中没有直接加载入口，保留作参考/重打包来源。
+ *
+ * 提供场景跳转、标签触发、Ending 跳转、KS 执行、sf/存储 编辑
  */
 ;(function () {
   if (window.TYRANO && window.TYRANO.debugMenu) return

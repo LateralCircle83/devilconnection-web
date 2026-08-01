@@ -2,6 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 
+// Offline helper for AI agents/maintainers to inspect encrypted DC_ENC_v1 mods.
+// It is intentionally not part of the browser runtime.
 const ENCRYPT_SIG = 'DC_ENC_v1'
 
 // 解析 ASAR 文件头，返回 { files: Map<路径, {offset,size}>, dataOffset }

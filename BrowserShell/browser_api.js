@@ -1,6 +1,11 @@
 /**
  * Browser API shim for TyranoScript
  * Replaces Electron preload's window.api in browser environments.
+ *
+ * Boundary: this file owns browser replacements for the original preload API
+ * (storage, dialogs, fullscreen, file download/upload helpers). Tyrano engine
+ * patches live in BrowserShell/electron_latest.js; DCML mod compatibility
+ * lives under Modloader/.
  */
 ;(function () {
   if (window.api) {

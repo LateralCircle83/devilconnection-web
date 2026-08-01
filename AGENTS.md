@@ -13,7 +13,7 @@ Key facts:
 - **No build step is required** to run the game in a browser.
 - **No server-side component** exists.
 - All game logic is written in TyranoScript scenario files (`.ks`) and vanilla JavaScript.
-- The game is intended to be served as static files (`index.html`, `data/`, `tyrano/`).
+- The game is intended to be served as static files (`index.html`, `BrowserShell/`, `Modloader/`, `mods/`, `data/`, `tyrano/`).
 
 ## Technology stack
 
@@ -24,21 +24,21 @@ Key facts:
 - **Utilities**: JSZip, html2canvas, jsrender, LZString, jsQR, APNG support (`apng.js`, `blob.js`).
 - **3D support (mostly unused)**: Three.js and its loaders (the config has `use3D=false`).
 - **Text effects**: textillate, animate.css, lettering.js, touchSwipe.
-- **Node usage**: only for a small `serve` script in `package.json`; no bundler, transpiler, or test framework is present.
+- **Node usage**: local static serving, lightweight checks, and ASAR helper scripts; no bundler, transpiler, or test framework is present.
 - **Legacy native shell**: `_electron_legacy/` contains the original Electron main/preload/Steam integration, but the current `index.html` does not load it.
 
 ## Key configuration files
 
 | File | Purpose |
 |------|---------|
-| `package.json` | Project metadata. Only defines `scripts.serve` which runs `npx -y serve .`. |
-| `index.html` | Entry point. Loads all libraries, the browser API shim, and the Tyrano engine, then waits for the user click on `#tyrano_click_to_start` before initializing the game. |
+| `package.json` | Project metadata. Defines `scripts.serve` and lightweight local checks such as `check:modloader`. |
+| `index.html` | Entry point. Loads browser shell, shared libraries, ModLoader, and manager UI. Tyrano engine scripts are loaded dynamically after the user starts the game. |
 | `data/system/Config.tjs` | TyranoScript game configuration (screen size, text speed, default volumes, save settings, etc.). Generated/managed by TyranoBuilder. |
 | `data/system/KeyConfig.js` | Keyboard/mouse/gesture bindings for the game. |
 | `tyrano/lang.js` | In-game text strings. The current file contains Simplified Chinese UI text (with some Japanese names) for this port. |
 | `data/scenario/first.ks` | First scenario loaded by TyranoScript after initialization. It loads system macros and jumps to `title_screen.ks`. |
-| `browser_api.js` | Browser-only `window.api` shim (file system, storage, dialogs, fullscreen, etc.). |
-| `electron_latest.js` | Browser adaptation overrides for TyranoScript core behavior (save integration, patch disabling, `web`/`close` tags). |
+| `BrowserShell/browser_api.js` | Browser-only `window.api` shim (file system, storage, dialogs, fullscreen, etc.). |
+| `BrowserShell/electron_latest.js` | Browser adaptation overrides for TyranoScript core behavior (save integration, patch disabling, `web`/`close` tags). |
 
 ## Directory layout
 
@@ -46,8 +46,15 @@ Key facts:
 .
 ├── index.html              # Application entry point
 ├── package.json            # Minimal Node metadata / serve script
-├── browser_api.js          # Browser shim for Electron preload APIs
-├── electron_latest.js      # Tyrano runtime browser patches
+├── BrowserShell/           # Browser shell / Electron preload replacement
+│   ├── browser_api.js      # Browser shim for Electron preload APIs
+│   └── electron_latest.js  # Tyrano runtime browser patches
+├── tool/                   # Local development and inspection scripts
+│   ├── README.md           # Tool usage notes and runtime debug entrypoints
+│   ├── modloader_self_check.mjs
+│   ├── check_css.mjs
+│   ├── pack.mjs
+│   └── decrypt.js
 ├── favicon.ico
 ├── data/                   # Game assets and scripts
 │   ├── bgimage/            # Background images
@@ -75,19 +82,36 @@ Key facts:
 └── _electron_legacy/       # Original Electron + Steamworks files (not used by browser build)
 ```
 
+## Documentation ownership
+
+- `README.md` is the human-facing project entrypoint. Keep it short and link to
+  owner documents instead of duplicating tool lists, mod lists, or runtime API
+  details.
+- `AGENTS.md` is the agent-facing map of architecture, runtime facts, and
+  maintenance conventions.
+- `Modloader/README.md` owns ModLoader boundaries, invariants, and loader
+  verification.
+- `tool/README.md` owns local tool descriptions and DevTools debug entrypoints.
+- `mods/mods.json` owns the current built-in mod list.
+
+When changing a detail, update the owning document first and keep other files
+as pointers unless they need a short warning for agent safety.
+
 ## Runtime architecture
 
 1. The browser loads `index.html`.
-2. `browser_api.js` runs first and creates `window.api`, a browser-compatible replacement for the Electron preload API (storage, file dialogs, fullscreen, etc.).
-3. Core libraries (jQuery, jQuery UI, Howler, SweetAlert2, etc.) and the Tyrano engine (`tyrano/tyrano.js`, `tyrano/tyrano.base.js`, `tyrano/plugins/kag/*.js`) are loaded.
-4. `electron_latest.js` patches Tyrano core methods for the browser:
+2. `BrowserShell/browser_api.js` runs first and creates `window.api`, a browser-compatible replacement for the Electron preload API (storage, file dialogs, fullscreen, etc.).
+3. Core libraries (jQuery, jQuery UI, Howler, SweetAlert2, etc.), `Modloader/mod_compat.js`, `Modloader/mod_loader.js`, and `Modloader/manager.js` are loaded.
+4. The user chooses mods and clicks the manager start button. `ModLoader.init(selectedIds)` loads selected ASARs, wires resource interceptors, and executes mod hooks.
+5. `Modloader/manager.js` dynamically loads Tyrano engine scripts in order, then loads `BrowserShell/electron_latest.js`.
+6. `BrowserShell/electron_latest.js` patches Tyrano core methods for the browser:
    - Forces `configSave = 'webstorage'` so saves use the browser shim.
    - Disables patch application and web-patch checks.
    - Overrides the `web`, `close`, and `check_web_patch` KAG tags.
    - Hooks `TYRANO.init` so IndexedDB storage is ready before the game starts.
-5. The user must click the `#tyrano_click_to_start` overlay. This satisfies browser autoplay policies, resumes the Howler `AudioContext`, and then calls `TYRANO.init()`.
-6. `TYRANO.init()` loads the `kag` plugin, which reads `data/system/Config.tjs` and starts `data/scenario/first.ks`.
-7. `first.ks` loads system macros (`system/tyrano.ks`, `system/builder.ks`, `system/chara_define.ks`), sets up the message window, loads plugins, and jumps to `title_screen.ks`.
+7. The manager overlay is removed, browser autoplay state is nudged/resumed, and `TYRANO.init()` is called.
+8. `TYRANO.init()` loads the `kag` plugin, which reads `data/system/Config.tjs` and starts `data/scenario/first.ks`.
+9. `first.ks` loads system macros (`system/tyrano.ks`, `system/builder.ks`, `system/chara_define.ks`), sets up the message window, loads plugins, and jumps to `title_screen.ks`.
 
 ### Save / storage system
 
@@ -95,14 +119,14 @@ Key facts:
 - IndexedDB is loaded into memory at startup; writes are flushed asynchronously on a short timer and on `beforeunload` / `pagehide` / `visibilitychange`.
 - If IndexedDB is unavailable, it falls back to `localStorage`.
 - On first run, existing `localStorage` save keys are migrated into IndexedDB.
-- Save data is JSON-encoded and percent-encoded (matching the Steam/Electron `.sav` format). `validateSaveData` parses the decoded JSON; if parsing fails, **all storage is cleared** (controlled by `TYRANO.clear_on_corrupt_save`).
+- Save data is JSON-encoded and percent-encoded (matching the Steam/Electron `.sav` format). `validateSaveData` parses the decoded JSON; corrupt keys are isolated/removed and the user is asked before clearing all storage.
 
 ## Browser port layer
 
 The two files that make the browser port possible are:
 
-- **`browser_api.js`**: Implements the `window.api` contract expected by the Tyrano engine. Includes file-system shims, save-file download (`saveFile`), dialog shims, fullscreen, and the IndexedDB-backed `storage` object.
-- **`electron_latest.js`**: Implements Tyrano runtime behavior that differs between Electron and the browser. It overrides `kag.init`, `checkUpdate`, `applyPatch`, and several KAG tags, and extends jQuery with browser-compatible storage helpers.
+- **`BrowserShell/browser_api.js`**: Implements the `window.api` contract expected by the Tyrano engine. Includes file-system shims, save-file download (`saveFile`), dialog shims, fullscreen, and the IndexedDB-backed `storage` object.
+- **`BrowserShell/electron_latest.js`**: Implements Tyrano runtime behavior that differs between Electron and the browser. It overrides `kag.init`, `checkUpdate`, `applyPatch`, and several KAG tags, and extends jQuery with browser-compatible storage helpers.
 
 Both files are written as immediately-invoked function expressions (IIFE) so they can be loaded as plain `<script>` tags. They rely on globals such as `jQuery`, `TYRANO`, `Howler`, `Swal`, and `LZString`.
 
@@ -133,6 +157,15 @@ python3 -m http.server 3000
 
 There is **no production build**, **no bundler**, and **no transpilation step**.
 
+## Local tools
+
+The source of truth for local scripts is `tool/README.md`. The most common
+loader regression command is:
+
+```bash
+npm run check:modloader
+```
+
 ## Development conventions
 
 ### Scenario scripts (`.ks`)
@@ -152,9 +185,9 @@ There is **no production build**, **no bundler**, and **no transpilation step**.
 ### JavaScript style
 
 - Engine and shim code uses ES5-style function declarations, `var`, and IIFEs.
-- `let`/`const` appear only in newer shim code (`browser_api.js`, `electron_latest.js`).
+- `let`/`const` appear only in newer shim code (`BrowserShell/browser_api.js`, `BrowserShell/electron_latest.js`).
 - Global namespaces are heavily used: `TYRANO`, `TYRANO.kag`, `TYRANO.kag.ftag`, `TYRANO.kag.variable.sf/tf`, `jQuery` (`$`).
-- File paths in the browser are resolved relative to `location.href` via `getBasePath()` in `browser_api.js`.
+- File paths in the browser are resolved relative to `location.href` via `getBasePath()` in `BrowserShell/browser_api.js`.
 
 ### Assets
 
@@ -165,8 +198,16 @@ There is **no production build**, **no bundler**, and **no transpilation step**.
 ## Testing / debugging
 
 - There is **no automated test suite** (no Jest, Mocha, Vitest, Cypress, etc.).
+- `npm run check:modloader` is the main lightweight ModLoader regression check.
 - Manual testing is done by running the game in a browser and exercising the scenario flow.
-- `data/system/Config.tjs` has `debugMenu.visible=true`, and `data/scenario/config.ks` loads `debug_menu.js`, so an in-game debug menu is available from the config screen.
+- Runtime debug entrypoints are documented in `tool/README.md`.
+- The root `data/others/debug_menu.js` is currently a legacy/reference copy; the
+  active debug menu is packaged in `mods/dc_debug.asar`.
+- ModLoader-specific invariants and verification steps are documented in
+  `Modloader/README.md`.
+- `BrowserShell/browser_api.js` keeps Electron debug-related methods such as
+  `toggleDevTools`, `readSubDir`, `captureWindow`, and `registerHotKey` as
+  browser no-ops for compatibility; do not rely on them for real debugging.
 - `data/scenario/tester.ks` and files prefixed with `AAAA_` or `_AAAA_` appear to be debug / scratch scenarios.
 - To inspect runtime state, use the browser DevTools and look at globals such as `TYRANO.kag.variable.sf`, `TYRANO.kag.stat`, and `TG`.
 
@@ -177,8 +218,9 @@ Deploy the following as static files:
 ```
 index.html
 favicon.ico
-browser_api.js
-electron_latest.js
+BrowserShell/
+Modloader/
+mods/
 data/
 tyrano/
 ```
@@ -216,7 +258,7 @@ The mod format and development conventions follow the **DevilConnection ModLoade
 
 - The game executes JavaScript from `[iscript]` blocks in scenario files and from arbitrary `.js` files loaded via `[loadjs]`. Treat all `.ks` and `.js` content as trusted.
 - There is no Content Security Policy defined in `index.html`.
-- `browser_api.js` uses `fetch` to load binary/text resources and `document.createElement('a')` with `.download` for photo export. Paths are resolved relative to the page URL.
-- Save data is stored in the client’s IndexedDB / localStorage. The browser shim validates JSON on read and clears all storage if data appears corrupted.
+- `BrowserShell/browser_api.js` uses `fetch` to load binary/text resources and `document.createElement('a')` with `.download` for photo export. Paths are resolved relative to the page URL.
+- Save data is stored in the client’s IndexedDB / localStorage. The browser shim validates JSON on read, isolates corrupt keys, and asks the user before clearing all storage.
 - The original Electron build uses `shell.openExternal`, native dialogs, file I/O, and Steamworks; do not enable those paths in the browser build.
 - Patch application (`applyPatch`) is explicitly disabled in the browser build to prevent arbitrary file extraction.
