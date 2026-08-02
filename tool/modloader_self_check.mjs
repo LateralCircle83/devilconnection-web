@@ -569,6 +569,34 @@ async function testSetAttributeInterceptorPreservesSemantics() {
   assert.match(img.attributes.SRC, /^blob:http:\/\/localhost:3000\/modloader-self-check-\d+$/)
 }
 
+async function testElementURLPropertyInterceptorsPreserveSemantics() {
+  const { context, ModLoader } = createHarness()
+  const asar = buildAsar({
+    'mods.json': JSON.stringify({ id: 'self-check', name: 'self-check' }),
+    'data/system/KeyConfig.js': 'window.__key_config_self_check__ = true',
+  })
+
+  assert.equal(await ModLoader.init([]), true)
+  ModLoader.parseAndIndex(asar)
+
+  const cases = [
+    [context.document.createElement('img'), 'src'],
+    [context.document.createElement('video'), 'src'],
+    [context.document.createElement('script'), 'src'],
+    [context.document.createElement('link'), 'href'],
+    [new context.Image(), 'src'],
+  ]
+
+  for (const [el, prop] of cases) {
+    el[prop] = 'data/system/KeyConfig.js'
+    assert.match(el[prop], /^blob:http:\/\/localhost:3000\/modloader-self-check-\d+$/)
+  }
+
+  const miss = context.document.createElement('img')
+  miss.src = 'data/system/missing.js'
+  assert.equal(miss.src, 'data/system/missing.js', 'non-mod URLs should keep native assignment behavior')
+}
+
 async function testAudioInterceptorPreservesPrototype() {
   const { context, ModLoader } = createHarness()
   const asar = buildAsar({
@@ -642,6 +670,7 @@ const tests = [
   ['loadText interceptor async preservation', testLoadTextInterceptorPreservesAsyncCallback],
   ['loadText interceptor fallback without original', testLoadTextInterceptorFallbackWithoutOriginal],
   ['setAttribute interceptor semantic preservation', testSetAttributeInterceptorPreservesSemantics],
+  ['element URL property interceptor semantic preservation', testElementURLPropertyInterceptorsPreserveSemantics],
   ['Audio interceptor prototype preservation', testAudioInterceptorPreservesPrototype],
   ['getModListWithSchema per-mod schema detection', testGetModListWithSchemaUsesPerModAsar],
 ]

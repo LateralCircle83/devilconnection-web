@@ -230,3 +230,7 @@
 - `AGENTS.md` 同步本地验证入口，保留 `npm run check:modloader` 作为聚焦 ModLoader 的快速回归命令
 - BrowserShell 与 Manager 启动相关检查合并进 `tool/startup_self_check.mjs`，减少 tool 目录中的碎片脚本
 - `Modloader/README.md` 补充资源拦截器必须只替换 URL、不改变调用语义的不变量
+
+### 优化：ModLoader 拦截器内部瘦身
+- 将 `document.createElement()` / `Image()` 使用的 img、video、script、link URL 属性拦截合并到通用 helper，减少重复包装代码
+- 为元素 URL 属性赋值补充 self-check，覆盖 `img.src`、`video.src`、`script.src`、`link.href` 和 `new Image().src`
