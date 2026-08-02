@@ -117,9 +117,11 @@ as pointers unless they need a short warning for agent safety.
 
 - The browser version stores save data in **IndexedDB** (`tyrano_browser_storage` / `kv`) via `window.api.storage`.
 - IndexedDB is loaded into memory at startup; writes are flushed asynchronously on a short timer and on `beforeunload` / `pagehide` / `visibilitychange`.
+- Pending writes carry per-key revisions and are acknowledged only after the IndexedDB transaction completes. Failed transactions retain the batch for a later retry and show a one-time recovery warning; fire-and-forget flushes must always handle rejection.
 - If IndexedDB is unavailable, it falls back to `localStorage`.
 - On first run, existing `localStorage` save keys are migrated into IndexedDB.
-- Save data is JSON-encoded and percent-encoded (matching the Steam/Electron `.sav` format). `validateSaveData` parses the decoded JSON; corrupt keys are isolated/removed and the user is asked before clearing all storage.
+- Save data is JSON-encoded and percent-encoded (matching the Steam/Electron `.sav` format). Readers also accept raw JSON, legacy `escape` encoding, and LZString-compressed variants, then normalize them to the active storage mode. A key is treated as corrupt only after every supported representation fails; corrupt keys are isolated/removed and the user is asked before clearing all storage.
+- Manager save export, import, and clear operations are restricted to `DevilConnection_*` plus the standalone `NEO` progress key. They must not operate on `mod_config_*`, `_tyrano_browser_*`, or unrelated same-origin storage, including in the `localStorage` fallback.
 
 ## Browser port layer
 

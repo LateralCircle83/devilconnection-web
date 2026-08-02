@@ -48,6 +48,45 @@
     return '_tyrano_browser_' + key
   }
 
+  var storageWriteNoticeShown = false
+
+  function clearStorageWriteError() {
+    storageWriteNoticeShown = false
+  }
+
+  function reportStorageWriteError(error) {
+    console.error('Browser storage write failed', error)
+    if (storageWriteNoticeShown) return
+    storageWriteNoticeShown = true
+
+    var errorName = error && (error.name || error.message)
+    var detail = errorName ? '（' + errorName + '）' : ''
+    var message =
+      '存档写入浏览器存储失败' +
+      detail +
+      '。当前页面中的最新进度尚未安全保存，请保持页面打开、释放存储空间后再次保存，并尽快导出备份。'
+
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: '存档写入失败',
+        text: message,
+        showDenyButton: typeof window.toggleSaveImport === 'function',
+        confirmButtonText: '知道了',
+        denyButtonText: '导出当前存档',
+      }).then(function (result) {
+        if (
+          result.isDenied &&
+          typeof window.toggleSaveImport === 'function'
+        ) {
+          window.toggleSaveImport()
+        }
+      })
+    } else {
+      alert(message)
+    }
+  }
+
   // IndexedDB-backed key/value store for saves (much larger quota than localStorage)
   function createIndexedDBStorage() {
     var DB_NAME = 'tyrano_browser_storage'
@@ -56,6 +95,8 @@
 
     var fallback = {
       cache: {},
+      pending: {},
+      _pendingRevision: 0,
       ready: Promise.resolve(false),
       _useIndexedDB: false,
       init: function () {
@@ -63,6 +104,7 @@
       },
       getItem: function (key) {
         if (this.cache.hasOwnProperty(key)) return this.cache[key]
+        if (this.pending.hasOwnProperty(key)) return null
         try {
           return localStorage.getItem(key)
         } catch (e) {
@@ -71,24 +113,42 @@
       },
       setItem: function (key, value) {
         this.cache[key] = value
+        var revision = ++this._pendingRevision
+        this.pending[key] = revision
         try {
           localStorage.setItem(key, value)
-        } catch (e) {}
+          if (this.pending[key] === revision) delete this.pending[key]
+          if (Object.keys(this.pending).length === 0) clearStorageWriteError()
+        } catch (e) {
+          reportStorageWriteError(e)
+        }
       },
       removeItem: function (key) {
         delete this.cache[key]
+        var revision = ++this._pendingRevision
+        this.pending[key] = revision
         try {
           localStorage.removeItem(key)
-        } catch (e) {}
+          if (this.pending[key] === revision) delete this.pending[key]
+          if (Object.keys(this.pending).length === 0) clearStorageWriteError()
+        } catch (e) {
+          reportStorageWriteError(e)
+        }
       },
       clear: function () {
-        this.cache = {}
         try {
           localStorage.clear()
-        } catch (e) {}
-        return Promise.resolve()
+          this.cache = {}
+          this.pending = {}
+          clearStorageWriteError()
+          return Promise.resolve()
+        } catch (e) {
+          reportStorageWriteError(e)
+          return Promise.reject(e)
+        }
       },
       keys: function () {
+        var that = this
         var result = {}
         try {
           for (var i = 0; i < localStorage.length; i++) {
@@ -99,9 +159,30 @@
         Object.keys(this.cache).forEach(function (k) {
           result[k] = true
         })
+        Object.keys(this.pending).forEach(function (k) {
+          if (!that.cache.hasOwnProperty(k)) delete result[k]
+        })
         return Object.keys(result)
       },
       flush: function () {
+        var that = this
+        var keys = Object.keys(this.pending)
+        var firstError = null
+        keys.forEach(function (key) {
+          var revision = that.pending[key]
+          try {
+            if (that.cache.hasOwnProperty(key)) {
+              localStorage.setItem(key, that.cache[key])
+            } else {
+              localStorage.removeItem(key)
+            }
+            if (that.pending[key] === revision) delete that.pending[key]
+          } catch (e) {
+            if (!firstError) firstError = e
+          }
+        })
+        if (firstError) return Promise.reject(firstError)
+        clearStorageWriteError()
         return Promise.resolve()
       },
     }
@@ -115,8 +196,10 @@
       db: null,
       cache: {},
       pending: {},
+      _pendingRevision: 0,
       ready: null,
       _flushTimer: null,
+      _flushPromise: null,
       _useIndexedDB: true,
 
       init: function () {
@@ -179,7 +262,9 @@
           req.onsuccess = function (e) {
             var cursor = e.target.result
             if (cursor) {
-              that.cache[cursor.key] = cursor.value
+              if (!that.pending.hasOwnProperty(cursor.key)) {
+                that.cache[cursor.key] = cursor.value
+              }
               cursor.continue()
             } else {
               resolve()
@@ -197,13 +282,13 @@
 
       setItem: function (key, value) {
         this.cache[key] = value
-        this.pending[key] = true
+        this.pending[key] = ++this._pendingRevision
         this._scheduleFlush()
       },
 
       removeItem: function (key) {
         delete this.cache[key]
-        this.pending[key] = true
+        this.pending[key] = ++this._pendingRevision
         this._scheduleFlush()
       },
 
@@ -241,52 +326,114 @@
         var that = this
         this._flushTimer = setTimeout(function () {
           that._flushTimer = null
-          that.flush()
+          that.flush().catch(reportStorageWriteError)
         }, 50)
       },
 
       flush: function () {
         var that = this
+        if (this._flushTimer) {
+          clearTimeout(this._flushTimer)
+          this._flushTimer = null
+        }
+        if (this._flushPromise) {
+          return this._flushPromise.then(function () {
+            return that.flush()
+          })
+        }
+
         var keys = Object.keys(this.pending)
         if (keys.length === 0) return Promise.resolve()
-        this.pending = {}
-        return this.init().then(function () {
-          if (!that._useIndexedDB) return Promise.resolve()
+
+        // A transaction only acknowledges the revisions it actually writes.
+        // Changes made while it is in flight must remain pending for the next flush.
+        var batch = keys.map(function (key) {
+          return {
+            key: key,
+            revision: that.pending[key],
+            hasValue: that.cache.hasOwnProperty(key),
+            value: that.cache[key],
+          }
+        })
+
+        var operation = this.init().then(function () {
+          if (!that._useIndexedDB) return fallback.flush.call(that)
           return new Promise(function (resolve, reject) {
             var tx = that.db.transaction(STORE_NAME, 'readwrite')
             var store = tx.objectStore(STORE_NAME)
-            tx.oncomplete = resolve
-            tx.onerror = function () {
-              reject(tx.error)
+            var settled = false
+
+            function rejectTransaction(event) {
+              if (settled) return
+              settled = true
+              reject(
+                tx.error ||
+                  (event && event.target && event.target.error) ||
+                  new Error('IndexedDB transaction failed')
+              )
             }
-            keys.forEach(function (key) {
-              if (that.cache.hasOwnProperty(key)) {
-                store.put(that.cache[key], key)
-              } else {
-                store.delete(key)
-              }
-            })
+
+            tx.oncomplete = function () {
+              if (settled) return
+              settled = true
+              batch.forEach(function (item) {
+                if (that.pending[item.key] === item.revision) {
+                  delete that.pending[item.key]
+                }
+              })
+              resolve()
+            }
+            tx.onerror = rejectTransaction
+            tx.onabort = rejectTransaction
+            try {
+              batch.forEach(function (item) {
+                if (item.hasValue) {
+                  store.put(item.value, item.key)
+                } else {
+                  store.delete(item.key)
+                }
+              })
+            } catch (e) {
+              rejectTransaction({ target: { error: e } })
+              try { tx.abort() } catch (abortError) {}
+            }
           })
         })
+
+        this._flushPromise = operation.then(
+          function () {
+            that._flushPromise = null
+            clearStorageWriteError()
+          },
+          function (error) {
+            that._flushPromise = null
+            throw error
+          }
+        )
+        return this._flushPromise
       },
     }
 
     storage.init()
-
-    window.addEventListener('beforeunload', function () {
-      storage.flush()
-    })
-    window.addEventListener('pagehide', function () {
-      storage.flush()
-    })
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden') storage.flush()
-    })
-
     return storage
   }
 
   var storage = createIndexedDBStorage()
+
+  function flushStorageInBackground() {
+    try {
+      Promise.resolve(storage.flush()).catch(reportStorageWriteError)
+    } catch (e) {
+      reportStorageWriteError(e)
+    }
+  }
+
+  window.addEventListener('beforeunload', flushStorageInBackground)
+  window.addEventListener('pagehide', flushStorageInBackground)
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') flushStorageInBackground()
+  })
+
   var corruptSaveNoticeShown = false
 
   function clearSaveDataOnCorruption(key, rawValue, error) {

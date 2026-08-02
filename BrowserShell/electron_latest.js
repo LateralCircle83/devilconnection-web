@@ -22,6 +22,83 @@
 
     var storage = window.api.storage
 
+    function trySaveCandidate(value, format, seen) {
+      if (typeof value !== 'string' || seen.indexOf(value) !== -1) return null
+      seen.push(value)
+      if (value === '' || value === 'null') {
+        return { decoded: value, format: format }
+      }
+      try {
+        JSON.parse(value)
+        return { decoded: value, format: format }
+      } catch (e) {
+        return null
+      }
+    }
+
+    // Format detection must stay side-effect free. A candidate is corrupt only
+    // after plain, legacy escaped, and LZString-compressed forms all fail.
+    function decodeStoredSave(raw) {
+      var seen = []
+      var result = trySaveCandidate(raw, 'json', seen)
+      if (result) return result
+
+      try {
+        result = trySaveCandidate(decodeURIComponent(raw), 'uri', seen)
+        if (result) return result
+      } catch (e) {}
+
+      try {
+        result = trySaveCandidate(unescape(raw), 'escape', seen)
+        if (result) return result
+      } catch (e) {}
+
+      var decompressed = null
+      try {
+        decompressed = LZString.decompress(raw)
+      } catch (e) {}
+      if (typeof decompressed !== 'string') return null
+
+      result = trySaveCandidate(decompressed, 'compressed-json', seen)
+      if (result) return result
+      try {
+        result = trySaveCandidate(
+          decodeURIComponent(decompressed),
+          'compressed-uri',
+          seen
+        )
+        if (result) return result
+      } catch (e) {}
+      try {
+        return trySaveCandidate(
+          unescape(decompressed),
+          'compressed-escape',
+          seen
+        )
+      } catch (e) {
+        return null
+      }
+    }
+
+    function readStoredSave(key, compressed) {
+      var raw = storage.getItem(key)
+      if (raw == 'null' || raw == null) return null
+      raw = String(raw)
+
+      var result = decodeStoredSave(raw)
+      if (!result) {
+        // This is the only destructive validation point, after every supported
+        // representation has failed.
+        window.api.validateSaveData(key, raw)
+        return null
+      }
+
+      var canonical = encodeURIComponent(result.decoded)
+      if (compressed) canonical = LZString.compress(canonical)
+      if (canonical !== raw) storage.setItem(key, canonical)
+      return result.decoded
+    }
+
     // Uncompressed webstorage mode (UTF-8 percent encoding, matches Steam .sav files)
     $.setStorageWeb = function (key, val) {
       val = JSON.stringify(val)
@@ -30,17 +107,7 @@
 
     $.getStorageWeb = function (key) {
       try {
-        var gv = storage.getItem(key)
-        if (gv == 'null' || gv == null) return null
-        // Steam / Electron .sav files use encodeURIComponent; legacy browser data used escape
-        var decoded
-        try {
-          decoded = decodeURIComponent(gv)
-        } catch (e) {
-          decoded = unescape(gv)
-        }
-        if (!window.api.validateSaveData(key, decoded)) return null
-        return decoded
+        return readStoredSave(key, false)
       } catch (e) {
         console.error('IndexedDB save read failed', e)
         return null
@@ -55,28 +122,7 @@
 
     $.getStorageCompress = function (key) {
       try {
-        var gv = storage.getItem(key)
-        if (gv == 'null' || gv == null) return null
-
-        // Steam .sav files are plain percent-encoded, not LZString compressed
-        try {
-          var plain = decodeURIComponent(gv)
-          if (window.api.validateSaveData(key, plain)) return plain
-        } catch (e) {}
-
-        // Legacy compressed data
-        var decompressed = LZString.decompress(gv)
-        if (!decompressed) {
-          decompressed = gv
-        }
-        var decoded
-        try {
-          decoded = decodeURIComponent(decompressed)
-        } catch (e) {
-          decoded = unescape(decompressed)
-        }
-        if (!window.api.validateSaveData(key, decoded)) return null
-        return decoded
+        return readStoredSave(key, true)
       } catch (e) {
         console.error('IndexedDB compressed save read failed', e)
         return null

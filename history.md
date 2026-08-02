@@ -247,3 +247,20 @@
 - 新增本地 `Modloader/markdown_viewer.js`，在启动管理器关于页读取 `README.md` 并渲染为 HTML
 - 关于页保留静态说明作为 README 读取失败时的兜底内容，避免影响游戏启动流程
 - `npm run check` 纳入 `markdown_viewer.js` 语法检查，`Modloader/README.md` 补充该 UI helper 的边界说明
+
+### 修复：合法压缩存档被误判并删除
+- `electron_latest.js` 将存档格式探测改为无副作用流程，只有普通 JSON、URI 编码、旧式 `escape` 编码及 LZString 压缩格式全部解析失败后才触发损坏存档隔离
+- `getStorageWeb()` 与 `getStorageCompress()` 共用统一读取器，兼容现代和旧式压缩存档，并在读取成功后规范化为当前存储模式
+- `startup_self_check.mjs` 改用项目实际的 LZString 实现，覆盖五种合法存档表示及真正损坏数据的删除行为
+
+### 修复：localStorage 降级模式误操作非存档数据
+- 管理器的存档导出、导入与清除统一限制为 `DevilConnection_*` 键及独立的 `NEO` 进度键
+- `mod_config_*`、`_tyrano_browser_*` 和其他同源存储不再被导出或清除；ZIP 中伪装为 `.sav` 的非存档项会被忽略并计数提示
+- `startup_self_check.mjs` 新增清除、导出和导入隔离测试，模拟 storage fallback 返回全部 localStorage 键的场景
+
+### 修复：IndexedDB 写入失败后丢失待写状态
+- `browser_api.js` 使用每键修订号跟踪 pending，只有 IndexedDB 事务完成后才确认对应版本；事务失败、终止或 `store.put()` 抛错时保留待写批次供后续重试
+- IndexedDB 启动加载不会再用旧值覆盖 `ready` 前已进入 pending 的新写入；localStorage 删除失败使用 pending tombstone 保持内存视图一致
+- 定时及页面生命周期触发的 `flush()` 统一处理 rejection，失败时提示最新进度尚未安全落盘，并可直接导出当前内存存档作为应急备份
+- localStorage fallback 不再静默吞掉配额错误，失败写入同样保留 pending 并向用户报告
+- `startup_self_check.mjs` 新增事务失败/终止重试、启动加载竞态、失败期间并发写入、定时错误提示、localStorage 配额/删除失败及多轮故障回归测试

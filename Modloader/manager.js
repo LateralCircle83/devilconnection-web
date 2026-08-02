@@ -110,15 +110,30 @@ function closeModConfig() {
   _cfgModId = null; _cfgSchema = null
 }
 
+function isSaveStorageKey(key) {
+  return typeof key === 'string' && (
+    key === 'NEO' || key.indexOf('DevilConnection_') === 0
+  )
+}
+
+function getSaveStorageKeys(storage) {
+  var keys = null
+  if (storage && storage.keys) {
+    try { keys = storage.keys() } catch(e) {}
+  }
+  if (!Array.isArray(keys)) {
+    try { keys = Object.keys(localStorage) } catch(e) { keys = [] }
+  }
+  return keys.filter(isSaveStorageKey)
+}
+
 // ===== 存档清除 =====
 function clearAllSaves() {
   if (!confirm('确定清除所有存档数据？此操作不可恢复！')) return
   if (!confirm('再次确认：所有存档数据将被永久删除！')) return
   try {
     var storage = window.api && window.api.storage
-    var keys = []
-    if (storage && storage.keys) { try { keys = storage.keys() || [] } catch(e) {} }
-    else { keys = Object.keys(localStorage).filter(function(k) { return k.indexOf('DevilConnection') >= 0 || k.indexOf('_tyrano_') >= 0 }) }
+    var keys = getSaveStorageKeys(storage)
     for (var i = 0; i < keys.length; i++) {
       if (storage && storage.removeItem) storage.removeItem(keys[i])
       else localStorage.removeItem(keys[i])
@@ -138,8 +153,7 @@ function toggleSaveImport() {
   try {
     var zip = new JSZip(), storage = window.api && window.api.storage
     if (!storage) { alert('存储不可用'); _importingSave = false; return }
-    var keys = []
-    try { keys = storage.keys() || [] } catch(e) { keys = Object.keys(localStorage) }
+    var keys = getSaveStorageKeys(storage)
     var count = 0
     for (var i = 0; i < keys.length; i++) {
       var k = keys[i], v = storage.getItem ? storage.getItem(k) : localStorage.getItem(k)
@@ -396,12 +410,26 @@ document.addEventListener('DOMContentLoaded', function() {
         var tasks = []
         var imported = 0
         var failed = 0
+        var ignored = 0
+        var saveFiles = 0
 
         zip.forEach(function(p, f) {
           if (f.dir || !/\.sav$/i.test(p)) return
+          saveFiles++
+          var key
+          try {
+            key = decodeURIComponent(p.replace(/\.sav$/i, ''))
+          } catch (err) {
+            console.warn('存档导入失败:', p, err)
+            failed++
+            return
+          }
+          if (!isSaveStorageKey(key)) {
+            ignored++
+            return
+          }
           tasks.push(
             f.async('string').then(function(content) {
-              var key = decodeURIComponent(p.replace(/\.sav$/i, ''))
               if (storage && storage.setItem) storage.setItem(key, content)
               else localStorage.setItem(key, content)
               imported++
@@ -412,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function() {
           )
         })
 
-        if (tasks.length === 0) {
+        if (saveFiles === 0) {
           alert('ZIP 中没有可导入的 .sav 存档文件')
           return null
         }
@@ -420,7 +448,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return Promise.all(tasks).then(function() {
           if (storage && storage.flush) return storage.flush()
         }).then(function() {
-          alert('导入完成：' + imported + ' 个成功，' + failed + ' 个失败')
+          var message = '导入完成：' + imported + ' 个成功，' + failed + ' 个失败'
+          if (ignored > 0) message += '，' + ignored + ' 个非存档项已忽略'
+          alert(message)
         })
       }).catch(function(err) {
         console.warn('存档导入失败:', err)
