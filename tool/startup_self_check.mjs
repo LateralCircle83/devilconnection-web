@@ -9,6 +9,7 @@ const repoRoot = path.resolve(__dirname, '..')
 const browserApiSource = fs.readFileSync(path.join(repoRoot, 'BrowserShell', 'browser_api.js'), 'utf8')
 const electronLatestSource = fs.readFileSync(path.join(repoRoot, 'BrowserShell', 'electron_latest.js'), 'utf8')
 const managerSource = fs.readFileSync(path.join(repoRoot, 'Modloader', 'manager.js'), 'utf8')
+const markdownViewerSource = fs.readFileSync(path.join(repoRoot, 'Modloader', 'markdown_viewer.js'), 'utf8')
 
 async function runTests(tests) {
   for (const [name, test] of tests) {
@@ -509,9 +510,35 @@ const managerTests = [
   ['successful startup still starts game', testSuccessfulStartupStillStartsGame],
 ]
 
+function renderMarkdown(markdown) {
+  const context = { console }
+  vm.createContext(context)
+  vm.runInContext(markdownViewerSource, context, { filename: 'Modloader/markdown_viewer.js' })
+  return context.ManagerMarkdown.render(markdown)
+}
+
+async function testMarkdownCodeLinkLabels() {
+  const markdown = [
+    '- [`Modloader/README.md`](Modloader/README.md)：模组加载器边界、约束与验证清单',
+    '- [`tool/README.md`](tool/README.md)：本地工具与 DevTools 调试入口',
+    '- [`AGENTS.md`](AGENTS.md)：给 AI agent 的项目结构、运行时事实与维护约定',
+  ].join('\n')
+  const html = renderMarkdown(markdown)
+
+  assert.match(html, /<a href="Modloader\/README\.md"[^>]*><code>Modloader\/README\.md<\/code><\/a>/)
+  assert.match(html, /<a href="tool\/README\.md"[^>]*><code>tool\/README\.md<\/code><\/a>/)
+  assert.match(html, /<a href="AGENTS\.md"[^>]*><code>AGENTS\.md<\/code><\/a>/)
+  assert.equal(html.includes('\u0000'), false)
+}
+
+const markdownTests = [
+  ['code-formatted link labels render correctly', testMarkdownCodeLinkLabels],
+]
+
 const suites = {
   'browser-shell': browserShellTests,
   manager: managerTests,
+  markdown: markdownTests,
 }
 
 const requestedSuites = process.argv.slice(2)
@@ -521,7 +548,7 @@ const suiteNames = requestedSuites.length && requestedSuites[0] !== 'all'
 
 for (const name of suiteNames) {
   if (!suites[name]) {
-    console.error(`Unknown startup self-check suite: ${name}`)
+    console.error(`Unknown self-check suite: ${name}`)
     console.error(`Available suites: ${Object.keys(suites).join(', ')}`)
     process.exit(1)
   }

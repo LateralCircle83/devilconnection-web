@@ -16,7 +16,7 @@ self-checks below. Run an individual script only when narrowing down a failure.
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage fallback and manager startup failure checks in one small VM harness. Use `node tool/startup_self_check.mjs browser-shell` or `node tool/startup_self_check.mjs manager` for a single suite. |
+| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage fallback, manager startup failure, and manager README Markdown rendering checks in one small VM harness. Use `node tool/startup_self_check.mjs browser-shell`, `node tool/startup_self_check.mjs manager`, or `node tool/startup_self_check.mjs markdown` for a single suite. |
 | `modloader_self_check.mjs` | `npm run check:modloader` | Runs the real `Modloader/mod_loader.js` inside a small browser-like VM harness and checks ASAR path normalization, offset/size validation, repeated `init()`, and interceptor semantic preservation. |
 | `check_css.mjs` | `node tool/check_css.mjs` | Checks whether manager UI classes used in `index.html` and `Modloader/manager.js` templates have matching selectors in `Modloader/manager.css`. This is only a rough UI sanity check. |
 | `pack.mjs` | `node tool/pack.mjs <input-dir> <output.asar>` | Packs a directory into a simple ASAR file for local ModLoader testing. It does not encrypt or sign the package. |

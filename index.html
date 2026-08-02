@@ -82,6 +82,7 @@
     <script src="./Modloader/mod_compat.js"></script>
     <script src="./Modloader/mod_loader.js"></script>
     <script src="./Modloader/Sortable.min.js"></script>
+    <script src="./Modloader/markdown_viewer.js"></script>
 
     <!-- Manager UI scripts -->
     <script src="./Modloader/manager.js"></script>
@@ -148,7 +149,7 @@
         <!-- 关于 -->
         <div class="page" id="page-about">
           <h2>关于</h2>
-          <div class="about-card">
+          <div id="about_readme" class="about-card about-markdown" data-markdown-source="./README.md">
             <p><b>恶魔连结</b>（DevilConnection）视觉小说的浏览器移植版。</p>
             <p>基于 TyranoScript V5 引擎，通过浏览器适配层使其可在普通浏览器中运行，支持 DCML 规范的 .asar 模组加载。</p>
             <p>模组加载器参考自 <a href="https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader" target="_blank">DevilConnection_ModLoader (Rebuild)</a></p>

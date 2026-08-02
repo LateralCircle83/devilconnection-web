@@ -11,9 +11,11 @@ and place new compatibility code at the boundary that owns it.
 2. `Modloader/mod_compat.js` creates `window.ModCompat` for DCML hooks.
 3. `Modloader/mod_loader.js` parses ASAR files, indexes overrides, installs
    resource interceptors, and exposes `window.ModLoader`.
-4. `Modloader/manager.js` renders the selection/config UI and calls
+4. `Modloader/Sortable.min.js` and `Modloader/markdown_viewer.js` provide
+   local UI helpers for mod ordering and README rendering.
+5. `Modloader/manager.js` renders the selection/config UI and calls
    `ModLoader.init(selectedIds)`.
-5. The Tyrano engine scripts and `BrowserShell/electron_latest.js` are loaded
+6. The Tyrano engine scripts and `BrowserShell/electron_latest.js` are loaded
    after the user starts the game.
 
 ## File boundaries
@@ -39,6 +41,13 @@ and place new compatibility code at the boundary that owns it.
   importing/exporting mod-related data.
 - Does not parse ASAR internals except through `ModLoader` helper APIs.
 - Local imported ASAR files are intentionally session-only.
+
+`markdown_viewer.js`
+
+- Owns the manager About page's local README Markdown rendering helper.
+- Escapes raw HTML from Markdown input and supports only the project README's
+  basic Markdown patterns.
+- Does not fetch remote Markdown or participate in game startup.
 
 `BrowserShell/browser_api.js`
 

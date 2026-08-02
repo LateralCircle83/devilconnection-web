@@ -242,3 +242,8 @@
 - 管理器内容区明确使用自身纵向滚动，并加入 `100dvh` 与底部安全余量，避免长模组列表末尾被手机浏览器底部工具栏遮挡；游戏启动后的 `body` 锁滚动逻辑保持不变
 - `startup_self_check.mjs` 的 DOM shim 补充 classList 支持，继续覆盖管理器启动流程
 - `check_css.mjs` 同时扫描 `index.html` 和 `manager.js` 中的 UI class，减少模板样式迁移后的漏配风险
+
+### 新增：关于页渲染 README
+- 新增本地 `Modloader/markdown_viewer.js`，在启动管理器关于页读取 `README.md` 并渲染为 HTML
+- 关于页保留静态说明作为 README 读取失败时的兜底内容，避免影响游戏启动流程
+- `npm run check` 纳入 `markdown_viewer.js` 语法检查，`Modloader/README.md` 补充该 UI helper 的边界说明
