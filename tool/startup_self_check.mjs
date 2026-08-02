@@ -203,6 +203,7 @@ class ManagerElementShim {
     this.id = idOrTag
     this.tagName = String(idOrTag).toUpperCase()
     this.children = []
+    this.className = ''
     this.disabled = false
     this.innerHTML = ''
     this.listeners = {}
@@ -213,6 +214,19 @@ class ManagerElementShim {
     }
     this.style = {}
     this.textContent = idOrTag === 'start_game_btn' ? '启动游戏' : ''
+    this.classList = {
+      add: (name) => {
+        const names = this.className ? this.className.split(/\s+/) : []
+        if (!names.includes(name)) names.push(name)
+        this.className = names.join(' ')
+      },
+      remove: (name) => {
+        this.className = (this.className ? this.className.split(/\s+/) : [])
+          .filter((item) => item !== name)
+          .join(' ')
+      },
+      contains: (name) => (this.className ? this.className.split(/\s+/) : []).includes(name),
+    }
   }
 
   addEventListener(type, callback) {

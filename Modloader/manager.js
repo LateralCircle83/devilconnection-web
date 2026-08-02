@@ -10,20 +10,37 @@ function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
+function setClassState(el, className, enabled) {
+  if (!el) return
+  if (el.classList) {
+    el.classList[enabled ? 'add' : 'remove'](className)
+    return
+  }
+  var names = String(el.className || '').split(/\s+/).filter(Boolean)
+  var index = names.indexOf(className)
+  if (enabled && index < 0) names.push(className)
+  if (!enabled && index >= 0) names.splice(index, 1)
+  el.className = names.join(' ')
+}
+
+function configMessage(text) {
+  return '<div class="cfg-message">' + esc(text) + '</div>'
+}
+
 function openModConfig(modId, modName) {
   _cfgModId = modId
   document.getElementById('mod_config_title').textContent = modName + ' 配置'
   var fieldsEl = document.getElementById('mod_config_fields')
-  fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">读取配置中...</div>'
-  document.getElementById('mod_config_modal').style.display = 'flex'
+  fieldsEl.innerHTML = configMessage('读取配置中...')
+  setClassState(document.getElementById('mod_config_modal'), 'is-open', true)
 
   var modEntry = _modList ? _modList.find(function(m) { return m.id === modId }) : null
-  if (!modEntry) { fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">模组信息缺失</div>'; return }
+  if (!modEntry) { fieldsEl.innerHTML = configMessage('模组信息缺失'); return }
 
   if (modEntry.isLocal) {
     var s = (window.ModLoader && ModLoader._localConfigs) ? ModLoader._localConfigs[modId] : null
     if (s) { renderConfigForm(s); return }
-    fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">该模组无可配置项</div>'
+    fieldsEl.innerHTML = configMessage('该模组无可配置项')
     return
   }
 
@@ -37,7 +54,7 @@ function openModConfig(modId, modName) {
     renderConfigForm(schema)
   }).catch(function(e) {
     console.warn('ModLoader: config load error', e)
-    fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">该模组无可配置项</div>'
+    fieldsEl.innerHTML = configMessage('该模组无可配置项')
   })
 }
 
@@ -45,12 +62,12 @@ function renderConfigForm(schema) {
   _cfgSchema = schema
   var fieldsEl = document.getElementById('mod_config_fields')
   if (!schema || !schema.fields || !schema.fields.length) {
-    fieldsEl.innerHTML = '<div style="opacity:0.5;text-align:center;">无可配置项</div>'
+    fieldsEl.innerHTML = configMessage('无可配置项')
     return
   }
   var html = ''
   if (schema.description) {
-    html += '<div style="font-size:12px;opacity:0.6;margin-bottom:14px;">' + esc(schema.description) + '</div>'
+    html += '<div class="cfg-description">' + esc(schema.description) + '</div>'
   }
   var saved = {}
   try { saved = JSON.parse(localStorage.getItem('mod_config_' + _cfgModId)) || {} } catch(e) {}
@@ -59,17 +76,14 @@ function renderConfigForm(schema) {
     var f = schema.fields[i]
     var val = saved[f.key] !== undefined ? saved[f.key] : f.default
     var inputId = 'cfg_' + f.key
-    html += '<div style="margin-bottom:12px;"><label for="' + inputId + '" style="display:block;font-size:13px;margin-bottom:4px;color:#7ea8b4;">' + esc(f.label || f.key) + '</label>'
+    html += '<div class="cfg-field"><label class="cfg-label" for="' + esc(inputId) + '">' + esc(f.label || f.key) + '</label>'
     if (f.type === 'toggle') {
-      html += '<input type="checkbox" id="' + inputId + '" ' + (val ? 'checked' : '') + ' style="width:20px;height:20px;accent-color:#ffc1b3;">'
-    } else if (f.type === 'number') {
-      html += '<input type="number" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
-    } else if (f.type === 'password') {
-      html += '<input type="password" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
+      html += '<input type="checkbox" class="cfg-toggle" id="' + esc(inputId) + '" ' + (val ? 'checked' : '') + '>'
     } else {
-      html += '<input type="text" id="' + inputId + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '" style="width:100%;padding:8px 10px;border:1px solid #dce8ec;border-radius:6px;background:#f0f6f8;color:#4a5568;font-size:14px;box-sizing:border-box;outline:none;">'
+      var type = f.type === 'number' || f.type === 'password' ? f.type : 'text'
+      html += '<input type="' + type + '" class="cfg-input" id="' + esc(inputId) + '" value="' + esc(String(val != null ? val : '')) + '" placeholder="' + esc(f.placeholder || '') + '">'
     }
-    if (f.help) html += '<div style="font-size:11px;opacity:0.4;margin-top:3px;">' + esc(f.help) + '</div>'
+    if (f.help) html += '<div class="cfg-help">' + esc(f.help) + '</div>'
     html += '</div>'
   }
   fieldsEl.innerHTML = html
@@ -92,7 +106,7 @@ function saveModConfig() {
 }
 
 function closeModConfig() {
-  document.getElementById('mod_config_modal').style.display = 'none'
+  setClassState(document.getElementById('mod_config_modal'), 'is-open', false)
   _cfgModId = null; _cfgSchema = null
 }
 
@@ -150,14 +164,12 @@ document.addEventListener('DOMContentLoaded', function() {
   var startFailed = false
 
   function switchPage(page) {
-    document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none' })
+    document.querySelectorAll('.page').forEach(function(p) { setClassState(p, 'active', false) })
     var target = document.getElementById('page-' + page)
-    if (target) target.style.display = 'block'
+    setClassState(target, 'active', true)
     document.querySelectorAll('.nav-item').forEach(function(n) {
       var act = n.getAttribute('data-page') === page
-      n.style.background = act ? '#7ea8b4' : 'transparent'
-      n.style.color = act ? '#fff' : '#7ea8b4'
-      n.style.fontWeight = act ? '600' : '400'
+      setClassState(n, 'active', act)
     })
   }
   document.querySelectorAll('.nav-item').forEach(function(n) {
@@ -183,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var checkedState = getCheckedState()
     _modList = mods || []
     if (!mods || mods.length === 0) {
-      modListEl.innerHTML = '<div style="text-align:center;color:#475569;padding:24px;font-size:13px;">没有可用模组</div>'
+      modListEl.innerHTML = '<div class="mod-empty">没有可用模组</div>'
       return
     }
     var html = ''
@@ -311,8 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function finishStart() {
     try { new Audio('./tyrano/audio/silent.mp3').play() } catch(e) {}
     try { if (Howler && Howler.ctx && Howler.ctx.state === 'suspended') Howler.ctx.resume() } catch(e) {}
-    overlay.style.transition = 'opacity 0.4s ease'
-    overlay.style.opacity = '0'
+    setClassState(overlay, 'is-exiting', true)
     setTimeout(function() {
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay)
       // 恢复触摸阻止，防止游戏画面滚动

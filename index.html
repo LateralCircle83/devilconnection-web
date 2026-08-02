@@ -35,18 +35,6 @@
 
     <!-- JSZip -->
     <script src="./tyrano/libs/jszip.min.js"></script>
-    <style>
-      .swal2-container {
-        z-index: 2147483647 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-      }
-      .swal2-popup {
-        max-height: 90vh;
-        overflow-y: auto;
-      }
-    </style>
-
     <!-- 廃止予定 alertify.js -->
     <link href="./tyrano/libs/alertify/alertify.core.css" rel="stylesheet" />
     <link href="./tyrano/libs/alertify/alertify.default.css" rel="stylesheet" />
@@ -113,17 +101,17 @@
           <div class="logo-icon">D</div>
           <span class="logo-text">管理器</span>
         </div>
-        <div class="nav-item" data-page="console"><span style="font-size:16px;margin-right:8px;">🏠</span> 控制台</div>
-        <div class="nav-item" data-page="mods"><span style="font-size:16px;margin-right:8px;">🧩</span> 模组</div>
-        <div class="nav-item" data-page="saves"><span style="font-size:16px;margin-right:8px;">💾</span> 存档</div>
-        <div class="nav-item" data-page="about"><span style="font-size:16px;margin-right:8px;">ℹ️</span> 关于</div>
+        <div class="nav-item active" data-page="console"><span class="icon">🏠</span> 控制台</div>
+        <div class="nav-item" data-page="mods"><span class="icon">🧩</span> 模组</div>
+        <div class="nav-item" data-page="saves"><span class="icon">💾</span> 存档</div>
+        <div class="nav-item" data-page="about"><span class="icon">ℹ️</span> 关于</div>
       </div>
 
       <!-- 右侧内容 -->
       <div class="mgr-content">
 
         <!-- 控制台 -->
-        <div class="page" id="page-console">
+        <div class="page active" id="page-console">
           <h1>恶魔连结 · 静态 Web 版</h1>
           <p class="page-sub">DevilConnection Static Web Port</p>
           <button id="start_game_btn" class="btn-start">🚀 启动游戏</button>
@@ -134,31 +122,31 @@
         </div>
 
         <!-- 模组 -->
-        <div class="page" id="page-mods" style="display:none;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="page" id="page-mods">
+          <div class="mgr-header">
             <h2>模组管理</h2>
             <button id="load_local_btn" class="btn-add-mod">+ 添加模组</button>
-            <input id="asar_file_input" type="file" accept=".asar" style="display:none">
+            <input id="asar_file_input" class="hidden-file-input" type="file" accept=".asar">
           </div>
-          <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);border-radius:10px;overflow:hidden;">
-            <div style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;font-size:10px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;"><span>已安装模组（拖拽调整顺序）</span><span>加载</span></div>
-            <div id="mod_list" style="min-height:50px;"></div>
+          <div class="mod-list-container">
+            <div class="mod-list-header"><span>已安装模组（拖拽调整顺序）</span><span>加载</span></div>
+            <div id="mod_list"></div>
           </div>
         </div>
 
         <!-- 存档 -->
-        <div class="page" id="page-saves" style="display:none;">
+        <div class="page" id="page-saves">
           <h2>存档管理</h2>
           <div class="save-grid">
             <div class="save-btn" onclick="toggleSaveImport()"><div class="tile-icon">📤</div><div class="tile-label">导出存档</div></div>
             <div class="save-btn" onclick="document.getElementById('import_save_input').click()"><div class="tile-icon">📥</div><div class="tile-label">导入存档</div></div>
             <div class="save-btn btn-danger" onclick="clearAllSaves()"><div class="tile-icon">🗑️</div><div class="tile-label">清除存档</div></div>
           </div>
-          <input id="import_save_input" type="file" accept=".zip" style="display:none">
+          <input id="import_save_input" class="hidden-file-input" type="file" accept=".zip">
         </div>
 
         <!-- 关于 -->
-        <div class="page" id="page-about" style="display:none;">
+        <div class="page" id="page-about">
           <h2>关于</h2>
           <div class="about-card">
             <p><b>恶魔连结</b>（DevilConnection）视觉小说的浏览器移植版。</p>

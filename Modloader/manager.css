@@ -1,10 +1,28 @@
 /* 管理器覆盖层 - 碧绡配色 */
 #tyrano_click_to_start {
   position: fixed; left: 0; top: 0; width: 100vw; height: 100vh;
+  height: 100dvh;
   z-index: 2147483647; background: #fefefe;
   user-select: none; -webkit-user-select: none;
   display: flex; font-family: sans-serif; color: #4a5568;
-  touch-action: pan-y; -webkit-overflow-scrolling: touch;
+  overflow: hidden; touch-action: pan-y; -webkit-overflow-scrolling: touch;
+}
+#tyrano_click_to_start,
+#tyrano_click_to_start *,
+#mod_config_modal,
+#mod_config_modal * {
+  box-sizing: border-box;
+}
+#tyrano_click_to_start.is-exiting { opacity: 0; transition: opacity 0.4s ease; }
+.hidden-file-input { display: none; }
+.swal2-container {
+  z-index: 2147483647 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+}
+.swal2-popup {
+  max-height: 90vh;
+  overflow-y: auto;
 }
 /* 左侧导航栏 */
 .mgr-sidebar {
@@ -32,7 +50,11 @@
 .nav-item .icon { font-size: 16px; margin-right: 8px; }
 
 /* 右侧内容 */
-.mgr-content { flex: 1; overflow-y: auto; padding: 28px 32px; min-width: 0; }
+.mgr-content {
+  flex: 1 1 auto; min-width: 0; min-height: 0;
+  overflow-x: hidden; overflow-y: auto;
+  padding: 28px 32px; -webkit-overflow-scrolling: touch;
+}
 .page { display: none; }
 .page.active { display: block; }
 .page h1 { font-size: 24px; font-weight: 700; color: #7ea8b4; margin-bottom: 2px; }
@@ -69,16 +91,20 @@
 }
 .btn-add-mod:hover { background: #ffc1b3; color: #fff; }
 .mod-list-container {
-  background: #fff; border: 1px solid #dce8ec;
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);
   border-radius: 10px; overflow: hidden;
 }
 .mod-list-header {
-  padding: 8px 14px; border-bottom: 1px solid #dce8ec;
+  padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.04);
   display: flex; justify-content: space-between;
-  font-size: 10px; color: #a9d0d8; font-weight: 600;
+  font-size: 10px; color: #475569; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.3px;
 }
 #mod_list { min-height: 50px; }
+.mod-empty {
+  text-align: center; color: #475569;
+  padding: 24px; font-size: 13px;
+}
 .mod-item {
   display: flex; align-items: center; padding: 8px 14px;
   border-bottom: 1px solid #f0f6f8; cursor: default; transition: background 0.1s;
@@ -124,12 +150,27 @@
   align-items: center; justify-content: center;
   font-family: sans-serif; touch-action: pan-y;
 }
+#mod_config_modal.is-open { display: flex; }
 .modal-panel {
   background: #fff; border: 1px solid #dce8ec;
   border-radius: 16px; padding: 24px 28px; width: min(460px,90vw);
   max-height: 80vh; overflow-y: auto; text-align: left; touch-action: pan-y;
 }
 .modal-title { font-size: 17px; font-weight: 700; color: #7ea8b4; margin-bottom: 16px; }
+.cfg-message { opacity: 0.5; text-align: center; }
+.cfg-description { font-size: 12px; opacity: 0.6; margin-bottom: 14px; }
+.cfg-field { margin-bottom: 12px; }
+.cfg-label {
+  display: block; font-size: 13px;
+  margin-bottom: 4px; color: #7ea8b4;
+}
+.cfg-toggle { width: 20px; height: 20px; accent-color: #ffc1b3; }
+.cfg-input {
+  width: 100%; padding: 8px 10px; border: 1px solid #dce8ec;
+  border-radius: 6px; background: #f0f6f8; color: #4a5568;
+  font-size: 14px; box-sizing: border-box; outline: none;
+}
+.cfg-help { font-size: 11px; opacity: 0.4; margin-top: 3px; }
 .modal-footer { margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end; }
 .btn-cancel {
   padding: 8px 20px; border: 1px solid #dce8ec; border-radius: 8px;
@@ -146,9 +187,13 @@
 
 /* 手机端适配 */
 @media (max-width: 640px) {
-  #tyrano_click_to_start { flex-direction: column; overflow-y: auto; }
+  #tyrano_click_to_start {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
   .mgr-sidebar {
-    width: 100%; min-width: 0; flex-direction: row;
+    width: 100%; max-width: 100%; min-width: 0; flex-direction: row;
     padding: 10px 8px; gap: 2px; overflow-x: auto;
     border-right: none; border-bottom: 1px solid #dce8ec;
     flex-shrink: 0;
@@ -156,7 +201,11 @@
   .mgr-sidebar .logo { display: none; }
   .nav-item { font-size: 12px; padding: 7px 8px; white-space: nowrap; flex-shrink: 0; }
   .nav-item .icon { margin-right: 4px; }
-  .mgr-content { padding: 16px; }
+  .mgr-content {
+    width: 100%; max-width: 100%; min-height: 0;
+    overflow-x: hidden; overflow-y: auto;
+    padding: 16px 16px calc(48px + env(safe-area-inset-bottom, 0px));
+  }
   .page h1 { font-size: 20px; }
   .page h2 { font-size: 17px; }
   .tile-grid, .save-grid { grid-template-columns: 1fr; }

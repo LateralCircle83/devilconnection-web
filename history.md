@@ -234,3 +234,11 @@
 ### 优化：ModLoader 拦截器内部瘦身
 - 将 `document.createElement()` / `Image()` 使用的 img、video、script、link URL 属性拦截合并到通用 helper，减少重复包装代码
 - 为元素 URL 属性赋值补充 self-check，覆盖 `img.src`、`video.src`、`script.src`、`link.href` 和 `new Image().src`
+
+### 优化：管理器 UI 样式外置
+- 将启动前管理器页面、模组列表、配置弹窗表单和 SweetAlert 覆盖层的内联样式迁移到 `Modloader/manager.css`
+- `manager.js` 页面切换、弹窗开关和启动淡出改为切换 CSS class，减少运行时直接写入 UI 样式
+- 管理器移动端布局启用局部 `box-sizing: border-box`，并限制外层横向溢出，避免侧边栏移动到顶部后出现页面级左右超宽
+- 管理器内容区明确使用自身纵向滚动，并加入 `100dvh` 与底部安全余量，避免长模组列表末尾被手机浏览器底部工具栏遮挡；游戏启动后的 `body` 锁滚动逻辑保持不变
+- `startup_self_check.mjs` 的 DOM shim 补充 classList 支持，继续覆盖管理器启动流程
+- `check_css.mjs` 同时扫描 `index.html` 和 `manager.js` 中的 UI class，减少模板样式迁移后的漏配风险
