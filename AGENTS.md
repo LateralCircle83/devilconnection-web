@@ -31,7 +31,7 @@ Key facts:
 
 | File | Purpose |
 |------|---------|
-| `package.json` | Project metadata. Defines `scripts.serve` and lightweight local checks such as `check:modloader`. |
+| `package.json` | Project metadata. Defines `scripts.serve` and lightweight local checks such as `check`. |
 | `index.html` | Entry point. Loads browser shell, shared libraries, ModLoader, and manager UI. Tyrano engine scripts are loaded dynamically after the user starts the game. |
 | `data/system/Config.tjs` | TyranoScript game configuration (screen size, text speed, default volumes, save settings, etc.). Generated/managed by TyranoBuilder. |
 | `data/system/KeyConfig.js` | Keyboard/mouse/gesture bindings for the game. |
@@ -160,10 +160,10 @@ There is **no production build**, **no bundler**, and **no transpilation step**.
 ## Local tools
 
 The source of truth for local scripts is `tool/README.md`. The most common
-loader regression command is:
+local verification command is:
 
 ```bash
-npm run check:modloader
+npm run check
 ```
 
 ## Development conventions
@@ -198,7 +198,8 @@ npm run check:modloader
 ## Testing / debugging
 
 - There is **no automated test suite** (no Jest, Mocha, Vitest, Cypress, etc.).
-- `npm run check:modloader` is the main lightweight ModLoader regression check.
+- `npm run check` is the main lightweight local verification command. Use
+  `npm run check:modloader` for a focused ModLoader regression loop.
 - Manual testing is done by running the game in a browser and exercising the scenario flow.
 - Runtime debug entrypoints are documented in `tool/README.md`.
 - The root `data/others/debug_menu.js` is currently a legacy/reference copy; the

@@ -202,3 +202,31 @@
 - 为 `tyrano/css/font.css` 中的 `@font-face` 添加 `font-display: swap`
 - 仅声明浏览器可先显示 fallback 字体、字体加载完成后再替换，不改变字体文件、预加载脚本或资源路径
 - 格式化 `font.css`，方便后续继续评估 WOFF2 / 字体子集化 / 标题页 preload 精简
+
+## 2026-08-02
+
+### 修复：IndexedDB 不可用时启动崩溃
+- `browser_api.js` 的 storage fallback 补齐 `ready: Promise.resolve(false)` 和 `init()`，让隐私模式、IndexedDB 被禁用或打开失败时仍能走 localStorage fallback
+- `electron_latest.js` 启动包装改用 `Promise.resolve(storage.ready)` / `storage.init()`，避免假设 storage 一定暴露 ready Promise
+
+### 修复：引擎脚本加载失败被吞掉
+- `manager.js` 动态加载 Tyrano 引擎脚本时遇到缺文件、加载错误或浏览器补丁缺失会中断启动
+- 失败后恢复开始按钮，并通过弹窗明确提示失败脚本或缺失的引擎组件，避免继续调用半初始化的 `TYRANO.init()`
+- 已选择模组加载失败时停止启动；未选择模组时仍允许无模组启动
+- 新增 `startup_self_check.mjs`，覆盖 BrowserShell 无 IndexedDB / IndexedDB open 失败，以及 Manager 脚本失败、浏览器补丁失败、sanity check 失败、ModLoader 失败和成功启动路径
+
+### 修复：ModLoader 请求拦截改变调用语义
+- XHR 拦截器现在只替换 URL 参数，保留原始 `method`、`async`、`username`、`password` 等 `open()` 参数
+- `fetch()` 拦截器现在只替换 URL，保留原始 `init`；传入 `Request` 对象时复制原请求选项到新的 blob URL Request
+- `$.loadText` 命中 ASAR 时改为异步回调；原始 `$.loadText` 尚未定义时回退到 `fetch()`，避免引擎加载前的 hook 调用直接抛错
+- CSS 拦截器不再原地修改传入的样式对象，并保留 `CSSStyleDeclaration.setProperty()` 的 priority / 返回值
+- `setAttribute` 拦截器保留原始返回值并兼容大小写属性名；`Audio` wrapper 保留原型链，避免 `instanceof Audio` 异常
+- `getModListWithSchema()` 改为逐个检查对应 ASAR / 本地 buffer 的 `config.schema.json`，不再用合并后的全局 `fileIndex` 给所有模组赋同一个值
+- 为 `modloader_self_check.mjs` 增加 XHR、fetch、CSS、loadText、setAttribute、Audio、per-mod schema 语义回归测试，防止资源拦截和公开 API 再次变成非透明代理
+
+### 工具与文档
+- `package.json` 新增统一 `npm run check`，直接串联语法检查、CSS 粗检、ModLoader 与启动链路两组轻量自检
+- `tool/README.md` 记录新增 self-check 脚本，并明确日常优先使用 `npm run check`，单项脚本只用于定位失败
+- `AGENTS.md` 同步本地验证入口，保留 `npm run check:modloader` 作为聚焦 ModLoader 的快速回归命令
+- BrowserShell 与 Manager 启动相关检查合并进 `tool/startup_self_check.mjs`，减少 tool 目录中的碎片脚本
+- `Modloader/README.md` 补充资源拦截器必须只替换 URL、不改变调用语义的不变量

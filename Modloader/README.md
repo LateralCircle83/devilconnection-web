@@ -64,6 +64,12 @@ and place new compatibility code at the boundary that owns it.
   the current session.
 - Cross-origin, `blob:`, `data:`, and `javascript:` URLs should not be claimed
   by ASAR path matching.
+- Public APIs that report per-mod metadata must inspect that mod's own ASAR or
+  local buffer. Do not infer per-mod flags from the merged `fileIndex`.
+- Resource interceptors replace only the resolved URL. They must preserve the
+  rest of each browser API call, such as XHR `async` / credentials arguments and
+  `fetch()` `init` / `Request` options, CSS `setProperty` priority, callback
+  timing, and wrapper prototype behavior.
 
 ## Debug helpers
 
@@ -75,11 +81,11 @@ helper list there so DevTools usage notes have one owner.
 For loader changes, at minimum run:
 
 ```bash
-node --check Modloader/mod_loader.js
-node --check Modloader/mod_compat.js
-node --check Modloader/manager.js
-npm run check:modloader
+npm run check
 ```
+
+For a tighter edit loop while working only on the loader, `npm run check:modloader`
+runs the focused ModLoader VM harness.
 
 Then manually test:
 

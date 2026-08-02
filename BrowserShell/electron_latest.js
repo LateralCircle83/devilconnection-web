@@ -125,10 +125,16 @@
     // Wait for IndexedDB cache (and any migration) before starting the game
     var originalInit = TYRANO.init
     TYRANO.init = function () {
-      storage.ready.then(function () {
+      var ready = storage.ready
+      if (!ready && typeof storage.init === 'function') {
+        ready = storage.init()
+      }
+      return Promise.resolve(ready).then(function () {
         return migrateLocalStorageSaves()
+      }).catch(function (e) {
+        console.warn('Browser storage init/migration failed; continuing with available storage', e)
       }).then(function () {
-        originalInit.call(TYRANO)
+        return originalInit.call(TYRANO)
       })
     }
   }
@@ -243,6 +249,8 @@
   tyrano.plugin.kag.ftag.master_tag.check_web_patch =
     tyrano.plugin.kag.tag.check_web_patch
   tyrano.plugin.kag.ftag.master_tag.check_web_patch.kag = tyrano.plugin.kag
+
+  window.TYRANO.browser_shell_ready = true
 })()
 
 /**

@@ -298,7 +298,9 @@
         if (typeof url === 'string') {
           var blob = createBlobURL(url)
           if (blob) {
-            return _origXHROpen.call(this, method, blob, true)
+            var args = Array.prototype.slice.call(arguments)
+            args[1] = blob
+            return _origXHROpen.apply(this, args)
           }
         }
         return _origXHROpen.apply(this, arguments)
@@ -314,7 +316,10 @@
           var blobUrl = createBlobURL(url)
           if (blobUrl) {
             // blobUrl is a blob: URL string; fetch it via native fetch to get actual data
-            return _origFetch(blobUrl)
+            if (typeof Request !== 'undefined' && input instanceof Request) {
+              return _origFetch.call(window, new Request(blobUrl, input), init)
+            }
+            return _origFetch.call(window, blobUrl, init)
           }
         }
         return _origFetch.call(window, input, init)
@@ -325,10 +330,24 @@
     $.loadText = function (path, cb) {
       var data = readFileData(path)
       if (data) {
-        cb && cb(new TextDecoder('utf-8').decode(data))
+        var text = new TextDecoder('utf-8').decode(data)
+        setTimeout(function () {
+          cb && cb(text)
+        }, 0)
         return
       }
-      _origLoadText(path, cb)
+      if (typeof _origLoadText === 'function') return _origLoadText.apply($, arguments)
+      fetch(path)
+        .then(function (response) {
+          if (!response.ok) throw new Error('failed to load: ' + path)
+          return response.text()
+        })
+        .then(function (text) {
+          cb && cb(text)
+        })
+        .catch(function () {
+          cb && cb('')
+        })
     }
     var _origLoadQueue = $.loadQueue
     $.loadQueue = function (url, priority) {
@@ -337,24 +356,48 @@
       if (typeof _origLoadQueue === 'function') return _origLoadQueue.call($, url, priority)
     }
 
+    function rewriteCSSURLs(val) {
+      if (typeof val !== 'string') return val
+      return val.replace(/url\(['"]?([^'"\)]+)['"]?\)/g, function (m, url) {
+        var blob = createBlobURL(url)
+        return blob ? 'url("' + blob + '")' : m
+      })
+    }
+
     // Intercept jQuery background-image CSS URLs
     try {
       var _origCss = $.fn.css
-      var _rewriteCSS = function (val) {
-        if (typeof val !== 'string') return val
-        return val.replace(/url\(['"]?([^'"\)]+)['"]?\)/g, function (m, url) {
-          var blob = createBlobURL(url)
-          return blob ? 'url("' + blob + '")' : m
-        })
-      }
       $.fn.css = function (prop, val) {
         if (typeof prop === 'string' && val !== undefined) {
-          if (prop === 'background-image' || prop === 'background') val = _rewriteCSS(val)
-          return _origCss.call(this, prop, val)
+          var propName = prop.toLowerCase()
+          if (propName === 'background-image' || propName === 'background') {
+            var args = Array.prototype.slice.call(arguments)
+            args[1] = rewriteCSSURLs(val)
+            return _origCss.apply(this, args)
+          }
         }
         if (typeof prop === 'object') {
-          if (prop['background-image']) prop['background-image'] = _rewriteCSS(prop['background-image'])
-          if (prop['background']) prop['background'] = _rewriteCSS(prop['background'])
+          var nextProp = prop
+          var rewritten
+          if (prop['background-image']) {
+            rewritten = rewriteCSSURLs(prop['background-image'])
+            if (rewritten !== prop['background-image']) {
+              nextProp = Object.assign({}, nextProp)
+              nextProp['background-image'] = rewritten
+            }
+          }
+          if (prop['background']) {
+            rewritten = rewriteCSSURLs(prop['background'])
+            if (rewritten !== prop['background']) {
+              nextProp = nextProp === prop ? Object.assign({}, nextProp) : nextProp
+              nextProp['background'] = rewritten
+            }
+          }
+          if (nextProp !== prop) {
+            var objArgs = Array.prototype.slice.call(arguments)
+            objArgs[0] = nextProp
+            return _origCss.apply(this, objArgs)
+          }
         }
         return _origCss.apply(this, arguments)
       }
@@ -364,19 +407,20 @@
     try {
       var _origSetAttr = Element.prototype.setAttribute
       Element.prototype.setAttribute = function (attr, value) {
-        if (attr === 'src' && (this.tagName === 'IMG' || this instanceof HTMLImageElement || this.tagName === 'VIDEO' || this instanceof HTMLVideoElement || this.tagName === 'SCRIPT' || this instanceof HTMLScriptElement)) {
+        var attrName = String(attr || '').toLowerCase()
+        if (attrName === 'src' && (this.tagName === 'IMG' || this instanceof HTMLImageElement || this.tagName === 'VIDEO' || this instanceof HTMLVideoElement || this.tagName === 'SCRIPT' || this instanceof HTMLScriptElement)) {
           if (typeof value === 'string') {
             var blob = createBlobURL(value)
-            if (blob) { _origSetAttr.call(this, attr, blob); return }
+            if (blob) return _origSetAttr.call(this, attr, blob)
           }
         }
-        if (attr === 'href' && (this.tagName === 'LINK' || this instanceof HTMLLinkElement)) {
+        if (attrName === 'href' && (this.tagName === 'LINK' || this instanceof HTMLLinkElement)) {
           if (typeof value === 'string') {
             var blob = createBlobURL(value)
-            if (blob) { _origSetAttr.call(this, attr, blob); return }
+            if (blob) return _origSetAttr.call(this, attr, blob)
           }
         }
-        _origSetAttr.call(this, attr, value)
+        return _origSetAttr.call(this, attr, value)
       }
     } catch (e) { if (debug) console.warn('ModLoader: setAttribute override failed', e) }
 
@@ -384,13 +428,13 @@
     try {
       var _origSetProp = CSSStyleDeclaration.prototype.setProperty
       CSSStyleDeclaration.prototype.setProperty = function (prop, value) {
-        if (typeof value === 'string' && (prop === 'background-image' || prop === 'background')) {
-          value = value.replace(/url\(['"]?([^'"\)]+)['"]?\)/g, function (m, url) {
-            var blob = createBlobURL(url)
-            return blob ? 'url("' + blob + '")' : m
-          })
+        var propName = String(prop || '').toLowerCase()
+        if (typeof value === 'string' && (propName === 'background-image' || propName === 'background')) {
+          var args = Array.prototype.slice.call(arguments)
+          args[1] = rewriteCSSURLs(value)
+          return _origSetProp.apply(this, args)
         }
-        _origSetProp.call(this, prop, value)
+        return _origSetProp.apply(this, arguments)
       }
     } catch (e) { if (debug) console.warn('ModLoader: CSS setProperty override failed', e) }
 
@@ -405,6 +449,7 @@
         var a = new _origAudio(src)
         return a
       }
+      window.Audio.prototype = _origAudio.prototype
     } catch (e) { if (debug) console.warn('ModLoader: Audio override failed', e) }
 
     // Wire video.src for mod file interception
@@ -711,10 +756,26 @@
     // Get mod list with config.schema.json flag
     getModListWithSchema: async function () {
       var list = await this.getModList()
+      var result = []
       for (var i = 0; i < list.length; i++) {
-        list[i].hasSchema = fileIndex.has('config.schema.json')
+        var item = Object.assign({}, list[i])
+        item.hasSchema = false
+        if (item.id && this._localBuffers[item.id]) {
+          item.hasSchema = !!this._localConfigs[item.id]
+        } else if (item.file) {
+          try {
+            var resp = await fetch('./mods/' + item.file)
+            if (resp.ok) {
+              var parsed = parseAsar(await resp.arrayBuffer())
+              item.hasSchema = !!(parsed && readParsedFileJSON(parsed, 'config.schema.json'))
+            }
+          } catch (e) {
+            if (debug) console.warn('ModLoader: failed to inspect config schema for', item.id || item.file, e)
+          }
+        }
+        result.push(item)
       }
-      return list
+      return result
     },
 
     // Start the game after mods are loaded

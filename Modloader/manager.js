@@ -146,6 +146,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var modListEl = document.getElementById('mod_list')
   var startBtn = document.getElementById('start_game_btn')
   var overlay = document.getElementById('tyrano_click_to_start')
+  var startButtonText = startBtn ? startBtn.textContent : '启动游戏'
+  var startFailed = false
 
   function switchPage(page) {
     document.querySelectorAll('.page').forEach(function(p) { p.style.display = 'none' })
@@ -223,22 +225,87 @@ document.addEventListener('DOMContentLoaded', function() {
 
   var engineScripts = ['tyrano/lang.js','tyrano/libs.js','tyrano/tyrano.js','tyrano/tyrano.base.js','tyrano/plugins/kag/kag.js','tyrano/plugins/kag/kag.event.js','tyrano/plugins/kag/kag.key_mouse.js','tyrano/plugins/kag/kag.layer.js','tyrano/plugins/kag/kag.menu.js','tyrano/plugins/kag/kag.parser.js','tyrano/plugins/kag/kag.rider.js','tyrano/plugins/kag/kag.studio.js','tyrano/plugins/kag/kag.tag_audio.js','tyrano/plugins/kag/kag.tag_camera.js','tyrano/plugins/kag/kag.tag_ext.js','tyrano/plugins/kag/kag.tag_system.js','tyrano/plugins/kag/kag.tag_vchat.js','tyrano/plugins/kag/kag.tag_ar.js','tyrano/plugins/kag/kag.tag_three.js','tyrano/plugins/kag/kag.tag.js','data/system/KeyConfig.js','BrowserShell/electron_latest.js']
 
+  function showStartFailure(message, detail) {
+    var text = message + (detail ? '\n' + detail : '')
+    if (typeof Swal !== 'undefined' && Swal.fire) {
+      Swal.fire({ icon: 'error', title: '启动失败', text: text })
+    } else {
+      alert(text)
+    }
+  }
+
+  function failStart(message, detail) {
+    if (startFailed) return
+    startFailed = true
+    console.warn(message, detail || '')
+    startBtn.disabled = false
+    startBtn.textContent = startButtonText
+    showStartFailure(message, detail)
+  }
+
+  function getMissingEnginePieces() {
+    var missing = []
+    if (!window.jQuery || typeof window.jQuery.loadText !== 'function') missing.push('$.loadText')
+    if (!window.jQuery || typeof window.jQuery.loadQueue !== 'function') missing.push('$.loadQueue')
+    if (!window.TYRANO) missing.push('TYRANO')
+    else {
+      if (typeof TYRANO.init !== 'function') missing.push('TYRANO.init')
+      if (TYRANO.browser_shell_ready !== true) missing.push('BrowserShell/electron_latest.js')
+    }
+    if (!window.tyrano || !tyrano.plugin || !tyrano.plugin.kag) {
+      missing.push('tyrano.plugin.kag')
+    } else {
+      var kag = tyrano.plugin.kag
+      var required = ['event', 'ftag', 'key_mouse', 'layer', 'menu', 'parser', 'rider', 'studio', 'tag']
+      for (var i = 0; i < required.length; i++) {
+        if (!kag[required[i]]) missing.push('tyrano.plugin.kag.' + required[i])
+      }
+      if (kag.tag) {
+        var requiredTags = ['bgcamera', 'camera', 'eval', 'jump', 'loadjs', 'playbgm', 'text', 'vchat_in', '3d_init']
+        for (var j = 0; j < requiredTags.length; j++) {
+          if (!kag.tag[requiredTags[j]]) missing.push('tyrano.plugin.kag.tag.' + requiredTags[j])
+        }
+      }
+    }
+    return missing
+  }
+
   function loadEngine(index) {
-    if (index >= engineScripts.length) { finishStart(); return }
+    if (startFailed) return
+    if (index >= engineScripts.length) {
+      var missing = getMissingEnginePieces()
+      if (missing.length) {
+        failStart('引擎初始化检查失败', '缺少组件：' + missing.join(', '))
+        return
+      }
+      finishStart()
+      return
+    }
     var s = document.createElement('script')
     s.src = './' + engineScripts[index]
+    s.async = false
     s.onload = function() { loadEngine(index + 1) }
-    s.onerror = function() { console.warn('引擎加载失败:', engineScripts[index]); loadEngine(index + 1) }
+    s.onerror = function() { failStart('引擎脚本加载失败', engineScripts[index]) }
     document.head.appendChild(s)
   }
 
   function startGame(e) {
     if (e) e.stopPropagation()
+    startFailed = false
     startBtn.disabled = true; startBtn.textContent = '加载中...'
     var cbs = document.querySelectorAll('.mod_checkbox:checked'), ids = []
     for (var i = 0; i < cbs.length; i++) ids.push(cbs[i].getAttribute('data-id'))
     function go() { loadEngine(0) }
-    if (window.ModLoader) { ModLoader.init(ids).then(go).catch(function(e) { console.warn(e); go() }) } else { go() }
+    if (window.ModLoader) {
+      ModLoader.init(ids).then(go).catch(function(e) {
+        if (ids.length) {
+          failStart('模组加载器初始化失败', e && e.message ? e.message : String(e))
+        } else {
+          console.warn('ModLoader init failed; starting without mods', e)
+          go()
+        }
+      })
+    } else { go() }
   }
 
   function finishStart() {

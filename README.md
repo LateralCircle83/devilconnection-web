@@ -58,8 +58,7 @@ npm run serve
 - [`AGENTS.md`](AGENTS.md)：给 AI agent 的项目结构、运行时事实与维护约定
 
 ```bash
-npm run check:modloader
-node tool/check_css.mjs
+npm run check
 ```
 
 ## 模组

@@ -56,6 +56,11 @@
 
     var fallback = {
       cache: {},
+      ready: Promise.resolve(false),
+      _useIndexedDB: false,
+      init: function () {
+        return this.ready
+      },
       getItem: function (key) {
         if (this.cache.hasOwnProperty(key)) return this.cache[key]
         try {
@@ -160,6 +165,7 @@
             storage.keys = fallback.keys.bind(storage)
             storage.flush = fallback.flush.bind(storage)
           }
+          return !!ok
         })
         return this.ready
       },
