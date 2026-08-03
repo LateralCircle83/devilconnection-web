@@ -22,70 +22,12 @@
 
     var storage = window.api.storage
 
-    function trySaveCandidate(value, format, seen) {
-      if (typeof value !== 'string' || seen.indexOf(value) !== -1) return null
-      seen.push(value)
-      if (value === '' || value === 'null') {
-        return { decoded: value, format: format }
-      }
-      try {
-        JSON.parse(value)
-        return { decoded: value, format: format }
-      } catch (e) {
-        return null
-      }
-    }
-
-    // Format detection must stay side-effect free. A candidate is corrupt only
-    // after plain, legacy escaped, and LZString-compressed forms all fail.
-    function decodeStoredSave(raw) {
-      var seen = []
-      var result = trySaveCandidate(raw, 'json', seen)
-      if (result) return result
-
-      try {
-        result = trySaveCandidate(decodeURIComponent(raw), 'uri', seen)
-        if (result) return result
-      } catch (e) {}
-
-      try {
-        result = trySaveCandidate(unescape(raw), 'escape', seen)
-        if (result) return result
-      } catch (e) {}
-
-      var decompressed = null
-      try {
-        decompressed = LZString.decompress(raw)
-      } catch (e) {}
-      if (typeof decompressed !== 'string') return null
-
-      result = trySaveCandidate(decompressed, 'compressed-json', seen)
-      if (result) return result
-      try {
-        result = trySaveCandidate(
-          decodeURIComponent(decompressed),
-          'compressed-uri',
-          seen
-        )
-        if (result) return result
-      } catch (e) {}
-      try {
-        return trySaveCandidate(
-          unescape(decompressed),
-          'compressed-escape',
-          seen
-        )
-      } catch (e) {
-        return null
-      }
-    }
-
     function readStoredSave(key, compressed) {
       var raw = storage.getItem(key)
       if (raw == 'null' || raw == null) return null
       raw = String(raw)
 
-      var result = decodeStoredSave(raw)
+      var result = window.api.decodeSaveData(raw)
       if (!result) {
         // This is the only destructive validation point, after every supported
         // representation has failed.

@@ -38,7 +38,7 @@ and place new compatibility code at the boundary that owns it.
 `manager.js`
 
 - Owns the browser UI for selecting, importing, ordering, configuring, and
-  importing/exporting mod-related data.
+  importing/exporting mod-related data, plus the pre-start save archive UI.
 - Does not parse ASAR internals except through `ModLoader` helper APIs.
 - Local imported ASAR files are intentionally session-only.
 
@@ -69,6 +69,10 @@ and place new compatibility code at the boundary that owns it.
   retryable in the same page session.
 - Invalid local ASAR files must be rejected before the manager adds them to the
   selectable mod list.
+- Save archive actions must wait for `window.api.storage.ready`. Imports must
+  validate every recognized entry with the browser shell's side-effect-free
+  decoder and reject duplicate save keys before writing; a failed flush must
+  attempt to restore the pre-import values.
 - Resource interceptors must be installed once. Repeated `init()` calls should
   not wrap browser APIs again.
 - ASAR header and file entries must be validated before indexing:

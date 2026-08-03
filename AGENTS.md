@@ -122,6 +122,11 @@ as pointers unless they need a short warning for agent safety.
 - On first run, existing `localStorage` save keys are migrated into IndexedDB.
 - Save data is JSON-encoded and percent-encoded (matching the Steam/Electron `.sav` format). Readers also accept raw JSON, legacy `escape` encoding, and LZString-compressed variants, then normalize them to the active storage mode. A key is treated as corrupt only after every supported representation fails; corrupt keys are isolated/removed and the user is asked before clearing all storage.
 - Manager save export, import, and clear operations are restricted to `DevilConnection_*` plus the standalone `NEO` progress key. They must not operate on `mod_config_*`, `_tyrano_browser_*`, or unrelated same-origin storage, including in the `localStorage` fallback.
+- `window.api.decodeSaveData(raw)` is the shared side-effect-free decoder used by
+  Tyrano runtime reads and manager ZIP imports.
+- Manager save actions wait for `storage.ready`. ZIP imports validate all
+  recognized entries and reject duplicate keys before overwriting; a failed
+  flush restores the pre-import values through the same storage layer.
 
 ## Browser port layer
 

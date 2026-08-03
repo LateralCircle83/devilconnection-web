@@ -130,8 +130,12 @@
   border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.15s; text-align: center;
 }
 .save-btn:hover { border-color: #ffc1b3; background: #fff5f2; }
+.save-btn.is-busy { pointer-events: none; opacity: 0.55; }
 .btn-danger { border-color: #f0461f !important; }
 .btn-danger .tile-label { color: #f0461f; }
+.save-operation-status {
+  min-height: 20px; margin-top: 10px; color: #607d86; font-size: 12px;
+}
 
 /* 关于页 */
 .about-card {

@@ -127,46 +127,137 @@ function getSaveStorageKeys(storage) {
   return keys.filter(isSaveStorageKey)
 }
 
+function createSaveOperationError(stage, message, cause) {
+  var error = new Error(message)
+  error.name = 'SaveOperationError'
+  error.stage = stage
+  if (cause) error.cause = cause
+  return error
+}
+
+function errorDetail(error) {
+  return error && error.message ? error.message : String(error || '未知错误')
+}
+
+function setSaveOperationStatus(message) {
+  var status = document.getElementById('save_operation_status')
+  if (status) status.textContent = message || ''
+}
+
+function setSaveOperationBusy(busy) {
+  var buttons = document.querySelectorAll('.save-btn')
+  for (var i = 0; i < buttons.length; i++) {
+    setClassState(buttons[i], 'is-busy', busy)
+  }
+}
+
+function beginSaveOperation(message) {
+  if (_importingSave) return false
+  _importingSave = true
+  setSaveOperationBusy(true)
+  setSaveOperationStatus(message)
+  return true
+}
+
+function finishSaveOperation() {
+  _importingSave = false
+  setSaveOperationBusy(false)
+  setSaveOperationStatus('')
+}
+
+function waitForSaveStorage(storage) {
+  if (!storage || !storage.ready) return Promise.resolve(storage)
+  return Promise.resolve(storage.ready).then(function() { return storage })
+}
+
+function getSaveStorageValue(storage, key) {
+  return storage && storage.getItem
+    ? storage.getItem(key)
+    : localStorage.getItem(key)
+}
+
+function setSaveStorageValue(storage, key, value) {
+  if (storage && storage.setItem) storage.setItem(key, value)
+  else localStorage.setItem(key, value)
+}
+
+function removeSaveStorageValue(storage, key) {
+  if (storage && storage.removeItem) storage.removeItem(key)
+  else localStorage.removeItem(key)
+}
+
+function flushSaveStorage(storage) {
+  return storage && storage.flush ? storage.flush() : Promise.resolve()
+}
+
+async function restoreSaveSnapshot(storage, snapshot) {
+  for (var i = 0; i < snapshot.length; i++) {
+    var item = snapshot[i]
+    if (item.exists) setSaveStorageValue(storage, item.key, item.value)
+    else removeSaveStorageValue(storage, item.key)
+  }
+  await flushSaveStorage(storage)
+}
+
 // ===== 存档清除 =====
-function clearAllSaves() {
+async function clearAllSaves() {
   if (!confirm('确定清除所有存档数据？此操作不可恢复！')) return
   if (!confirm('再次确认：所有存档数据将被永久删除！')) return
+  if (!beginSaveOperation('正在读取存档...')) return
   try {
     var storage = window.api && window.api.storage
+    await waitForSaveStorage(storage)
     var keys = getSaveStorageKeys(storage)
+    setSaveOperationStatus('正在清除存档...')
     for (var i = 0; i < keys.length; i++) {
-      if (storage && storage.removeItem) storage.removeItem(keys[i])
-      else localStorage.removeItem(keys[i])
+      removeSaveStorageValue(storage, keys[i])
     }
-    var flushed = storage && storage.flush ? storage.flush() : Promise.resolve()
-    Promise.resolve(flushed).then(function() {
-      alert('已清除 ' + keys.length + ' 个存档数据')
-    }).catch(function(e) {
-      alert('清除失败: ' + (e && e.message ? e.message : e))
-    })
-  } catch(e) { alert('清除失败: ' + e.message) }
+    await flushSaveStorage(storage)
+    alert('已清除 ' + keys.length + ' 个存档数据')
+  } catch(e) {
+    console.warn('存档清除失败:', e)
+    alert('清除失败：' + errorDetail(e))
+  } finally {
+    finishSaveOperation()
+  }
 }
 
 // ===== 存档导出 =====
-function toggleSaveImport() {
-  if (_importingSave) return; _importingSave = true
+async function toggleSaveImport() {
+  if (!beginSaveOperation('正在读取存档...')) return
   try {
-    var zip = new JSZip(), storage = window.api && window.api.storage
-    if (!storage) { alert('存储不可用'); _importingSave = false; return }
+    if (typeof JSZip === 'undefined') throw new Error('JSZip 库未加载')
+    var storage = window.api && window.api.storage
+    if (!storage) throw new Error('存储不可用')
+    await waitForSaveStorage(storage)
+    var zip = new JSZip()
     var keys = getSaveStorageKeys(storage)
     var count = 0
     for (var i = 0; i < keys.length; i++) {
-      var k = keys[i], v = storage.getItem ? storage.getItem(k) : localStorage.getItem(k)
+      var k = keys[i], v = getSaveStorageValue(storage, k)
       if (v != null) { zip.file(encodeURIComponent(k) + '.sav', v); count++ }
     }
-    if (count === 0) { alert('没有可导出的存档数据'); _importingSave = false; return }
-    zip.generateAsync({ type: 'blob' }).then(function(blob) {
-      var url = URL.createObjectURL(blob), a = document.createElement('a')
-      a.href = url; a.download = 'DevilConnection_saves.zip'
-      document.body.appendChild(a); a.click(); document.body.removeChild(a)
-      setTimeout(function() { URL.revokeObjectURL(url) }, 10000); _importingSave = false
-    }).catch(function() { _importingSave = false })
-  } catch(e) { alert('导出失败'); _importingSave = false }
+    if (count === 0) {
+      alert('没有可导出的存档数据')
+      return
+    }
+    setSaveOperationStatus('正在导出存档 0%')
+    var blob = await zip.generateAsync({ type: 'blob' }, function(metadata) {
+      var percent = metadata && isFinite(metadata.percent)
+        ? Math.round(metadata.percent)
+        : 0
+      setSaveOperationStatus('正在导出存档 ' + percent + '%')
+    })
+    var url = URL.createObjectURL(blob), a = document.createElement('a')
+    a.href = url; a.download = 'DevilConnection_saves.zip'
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    setTimeout(function() { URL.revokeObjectURL(url) }, 10000)
+  } catch(e) {
+    console.warn('存档导出失败:', e)
+    alert('导出失败：' + errorDetail(e))
+  } finally {
+    finishSaveOperation()
+  }
 }
 
 // ===== 页面初始化 =====
@@ -402,76 +493,159 @@ document.addEventListener('DOMContentLoaded', function() {
     var file = e.target.files && e.target.files[0]
     if (!file) return
     if (_importingSave) { importInput.value = ''; return }
-    _importingSave = true
+    if (!beginSaveOperation('正在读取存档...')) { importInput.value = ''; return }
 
     function finishImport() {
-      _importingSave = false
+      finishSaveOperation()
       importInput.value = ''
     }
 
     var reader = new FileReader()
-    reader.onload = function(ev) {
+    reader.onload = async function(ev) {
       if (typeof JSZip === 'undefined') {
         alert('导入失败：JSZip 库未加载')
         finishImport()
         return
       }
-      JSZip.loadAsync(ev.target.result).then(function(zip) {
+      try {
         var storage = window.api && window.api.storage
-        var tasks = []
-        var imported = 0
-        var failed = 0
+        await waitForSaveStorage(storage)
+        var zip
+        try {
+          zip = await JSZip.loadAsync(ev.target.result)
+        } catch (zipError) {
+          throw createSaveOperationError('zip', 'ZIP 格式错误或读取失败', zipError)
+        }
+        var entries = []
+        var seenKeys = Object.create(null)
         var ignored = 0
         var saveFiles = 0
+        var collectError = null
 
         zip.forEach(function(p, f) {
-          if (f.dir || !/\.sav$/i.test(p)) return
+          if (collectError || f.dir || !/\.sav$/i.test(p)) return
           saveFiles++
           var key
           try {
             key = decodeURIComponent(p.replace(/\.sav$/i, ''))
           } catch (err) {
-            console.warn('存档导入失败:', p, err)
-            failed++
+            collectError = createSaveOperationError(
+              'validation',
+              '存档文件名无法解析：' + p,
+              err
+            )
             return
           }
           if (!isSaveStorageKey(key)) {
             ignored++
             return
           }
-          tasks.push(
-            f.async('string').then(function(content) {
-              if (storage && storage.setItem) storage.setItem(key, content)
-              else localStorage.setItem(key, content)
-              imported++
-            }).catch(function(err) {
-              console.warn('存档导入失败:', p, err)
-              failed++
-            })
-          )
+          if (seenKeys[key]) {
+            collectError = createSaveOperationError(
+              'validation',
+              'ZIP 中存在重复存档键：' + key
+            )
+            return
+          }
+          seenKeys[key] = true
+          entries.push({ key: key, path: p, file: f, content: null })
         })
 
+        if (collectError) throw collectError
         if (saveFiles === 0) {
-          alert('ZIP 中没有可导入的 .sav 存档文件')
-          return null
+          throw createSaveOperationError('validation', 'ZIP 中没有可导入的 .sav 存档文件')
+        }
+        if (entries.length === 0) {
+          throw createSaveOperationError('validation', 'ZIP 中没有 DevilConnection 存档')
+        }
+        if (!window.api || typeof window.api.decodeSaveData !== 'function') {
+          throw createSaveOperationError('validation', '存档格式验证组件不可用')
         }
 
-        return Promise.all(tasks).then(function() {
-          if (storage && storage.flush) return storage.flush()
-        }).then(function() {
-          var message = '导入完成：' + imported + ' 个成功，' + failed + ' 个失败'
-          if (ignored > 0) message += '，' + ignored + ' 个非存档项已忽略'
-          alert(message)
-        })
-      }).catch(function(err) {
+        for (var i = 0; i < entries.length; i++) {
+          var entry = entries[i]
+          setSaveOperationStatus(
+            '正在验证存档（' + (i + 1) + '/' + entries.length + '）...'
+          )
+          try {
+            entry.content = await entry.file.async('string')
+          } catch (readError) {
+            throw createSaveOperationError(
+              'zip',
+              '无法读取存档文件：' + entry.path,
+              readError
+            )
+          }
+          var decoded = window.api.decodeSaveData(entry.content)
+          if (!decoded || decoded.decoded === '') {
+            throw createSaveOperationError(
+              'validation',
+              '存档内容无效或已损坏：' + entry.key
+            )
+          }
+        }
+
+        var snapshot = []
+        var overwriteCount = 0
+        for (var snapshotIndex = 0; snapshotIndex < entries.length; snapshotIndex++) {
+          var snapshotKey = entries[snapshotIndex].key
+          var oldValue = getSaveStorageValue(storage, snapshotKey)
+          var exists = oldValue !== null && oldValue !== undefined
+          if (exists) overwriteCount++
+          snapshot.push({ key: snapshotKey, exists: exists, value: oldValue })
+        }
+        if (
+          overwriteCount > 0 &&
+          !confirm('导入将覆盖 ' + overwriteCount + ' 个现有存档，确定继续吗？')
+        ) {
+          return
+        }
+
+        setSaveOperationStatus('正在写入存档...')
+        try {
+          for (var writeIndex = 0; writeIndex < entries.length; writeIndex++) {
+            setSaveStorageValue(
+              storage,
+              entries[writeIndex].key,
+              entries[writeIndex].content
+            )
+          }
+          await flushSaveStorage(storage)
+        } catch (writeError) {
+          var rollbackError = null
+          try {
+            await restoreSaveSnapshot(storage, snapshot)
+          } catch (restoreError) {
+            rollbackError = restoreError
+          }
+          var writeMessage = rollbackError
+            ? '浏览器存储写入失败，自动恢复也未能安全落盘，请保持页面打开并导出备份'
+            : '浏览器存储写入失败，原有存档已恢复'
+          var operationError = createSaveOperationError('storage', writeMessage, writeError)
+          operationError.rollbackError = rollbackError
+          throw operationError
+        }
+
+        var message = '导入完成：' + entries.length + ' 个存档'
+        if (ignored > 0) message += '，' + ignored + ' 个非存档项已忽略'
+        alert(message)
+      } catch(err) {
         console.warn('存档导入失败:', err)
-        alert('导入失败：ZIP 格式错误或读取失败')
-      }).then(finishImport)
+        alert('导入失败：' + errorDetail(err))
+      } finally {
+        finishImport()
+      }
     }
     reader.onerror = function() {
       alert('导入失败：无法读取文件')
       finishImport()
     }
-    reader.readAsArrayBuffer(file)
+    try {
+      reader.readAsArrayBuffer(file)
+    } catch (readStartError) {
+      console.warn('[SaveManager] 无法读取存档压缩包:', readStartError)
+      alert('导入失败：无法读取文件：' + errorDetail(readStartError))
+      finishImport()
+    }
   })
 })

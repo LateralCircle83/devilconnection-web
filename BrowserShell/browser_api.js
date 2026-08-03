@@ -48,6 +48,71 @@
     return '_tyrano_browser_' + key
   }
 
+  function trySaveCandidate(value, format, seen, allowEmpty) {
+    if (typeof value !== 'string' || seen.indexOf(value) !== -1) return null
+    seen.push(value)
+    if (value === '' && allowEmpty) {
+      return { decoded: value, format: format }
+    }
+    try {
+      JSON.parse(value)
+      return { decoded: value, format: format }
+    } catch (e) {
+      return null
+    }
+  }
+
+  // Pure format detection shared by runtime reads and pre-start save imports.
+  // Corruption handling must remain outside this function so callers can
+  // validate an archive without touching the user's current storage.
+  function decodeSaveData(raw) {
+    if (raw == null) return null
+    raw = String(raw)
+    var seen = []
+    var result = trySaveCandidate(raw, 'json', seen, true)
+    if (result) return result
+
+    try {
+      result = trySaveCandidate(decodeURIComponent(raw), 'uri', seen, true)
+      if (result) return result
+    } catch (e) {}
+
+    try {
+      result = trySaveCandidate(unescape(raw), 'escape', seen, true)
+      if (result) return result
+    } catch (e) {}
+
+    var lz = window.LZString
+    if (!lz || typeof lz.decompress !== 'function') return null
+    var decompressed = null
+    try {
+      decompressed = lz.decompress(raw)
+    } catch (e) {}
+    if (typeof decompressed !== 'string') return null
+
+    result = trySaveCandidate(decompressed, 'compressed-json', seen, false)
+    if (result) return result
+    try {
+      result = trySaveCandidate(
+        decodeURIComponent(decompressed),
+        'compressed-uri',
+        seen,
+        false
+      )
+      if (result) return result
+    } catch (e) {}
+    try {
+      return trySaveCandidate(
+        unescape(decompressed),
+        'compressed-escape',
+        seen,
+        false
+      )
+    } catch (e) {
+      return null
+    }
+  }
+
   var storageWriteNoticeShown = false
 
   function clearStorageWriteError() {
@@ -676,6 +741,7 @@
     },
 
     storage: storage,
+    decodeSaveData: decodeSaveData,
     validateSaveData: validateSaveData,
   }
 })()

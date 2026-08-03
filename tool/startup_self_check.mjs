@@ -278,8 +278,8 @@ function createBrowserShellHarness(options = {}) {
   context.window = context
   context.globalThis = context
   vm.createContext(context)
-  vm.runInContext(lzStringSource, context, { filename: 'tyrano/libs/lz-string.min.js' })
   vm.runInContext(browserApiSource, context, { filename: 'BrowserShell/browser_api.js' })
+  vm.runInContext(lzStringSource, context, { filename: 'tyrano/libs/lz-string.min.js' })
   vm.runInContext(electronLatestSource, context, { filename: 'BrowserShell/electron_latest.js' })
   return { calls, context, swalCalls }
 }
@@ -539,6 +539,21 @@ async function testSaveReadersRemoveOnlyInvalidData() {
   }
 }
 
+async function testSharedSaveDecoderIsSideEffectFree() {
+  const { context } = createBrowserShellHarness()
+  const json = JSON.stringify({ slot: 8, title: '共享解码器' })
+  context.localStorage.setItem('unrelated-key', 'keep-me')
+
+  for (const [format, stored] of getSaveFormats(context, json)) {
+    const result = context.api.decodeSaveData(stored)
+    assert.ok(result, `shared decoder should accept ${format}`)
+    assert.equal(result.decoded, json)
+  }
+
+  assert.equal(context.api.decodeSaveData('bad'), null)
+  assert.equal(context.localStorage.getItem('unrelated-key'), 'keep-me')
+}
+
 const browserShellTests = [
   ['no IndexedDB fallback still starts', testNoIndexedDBFallbackStillStarts],
   ['IndexedDB open failure still starts', testIndexedDBOpenFailureStillStarts],
@@ -551,6 +566,7 @@ const browserShellTests = [
   ['localStorage quota failure is reported and retained', testLocalStorageQuotaFailureIsReportedAndRetained],
   ['localStorage failed removal uses pending tombstone', testLocalStorageFailedRemovalUsesPendingTombstone],
   ['IndexedDB repeated failures preserve latest state', testIndexedDBRepeatedFailuresPreserveLatestState],
+  ['shared save decoder is side-effect free', testSharedSaveDecoderIsSideEffectFree],
   ['save readers preserve supported formats', testSaveReadersPreserveSupportedFormats],
   ['save readers remove only invalid data', testSaveReadersRemoveOnlyInvalidData],
 ]
@@ -613,6 +629,7 @@ class ManagerElementShim {
 
 function createManagerHarness(options = {}) {
   const alerts = []
+  const confirmations = []
   const failed = []
   const initCalls = []
   const loaded = []
@@ -647,7 +664,11 @@ function createManagerHarness(options = {}) {
       },
       error() {},
     },
-    confirm() {
+    confirm(message) {
+      confirmations.push(String(message))
+      if (options.confirmHandler) {
+        return options.confirmHandler(String(message), confirmations.length)
+      }
       return options.confirmResult !== false
     },
     fetch() {
@@ -667,7 +688,26 @@ function createManagerHarness(options = {}) {
     },
     tyrano: undefined,
   }
-  if (options.storage) context.api = { storage: options.storage }
+  if (options.storage || options.decodeSaveData) {
+    context.api = {
+      storage: options.storage,
+      decodeSaveData: options.decodeSaveData || function decodeSaveData(raw) {
+        const seen = []
+        const candidates = [String(raw)]
+        try { candidates.push(decodeURIComponent(raw)) } catch (e) {}
+        try { candidates.push(unescape(raw)) } catch (e) {}
+        for (const candidate of candidates) {
+          if (seen.includes(candidate)) continue
+          seen.push(candidate)
+          try {
+            JSON.parse(candidate)
+            return { decoded: candidate, format: 'test' }
+          } catch (e) {}
+        }
+        return null
+      },
+    }
+  }
 
   function getElementById(id) {
     if (!elements.has(id)) elements.set(id, new ManagerElementShim(id))
@@ -787,11 +827,11 @@ function createManagerHarness(options = {}) {
   vm.createContext(context)
   vm.runInContext(managerSource, context, { filename: 'Modloader/manager.js' })
 
-  return { alerts, context, elements, failed, initCalls, loaded, warnings }
+  return { alerts, confirmations, context, elements, failed, initCalls, loaded, warnings }
 }
 
 async function flushMicrotasks() {
-  for (let i = 0; i < 8; i++) await Promise.resolve()
+  for (let i = 0; i < 24; i++) await Promise.resolve()
 }
 
 async function clickStart(harness) {
@@ -895,7 +935,7 @@ async function testSuccessfulStartupStillStartsGame() {
   assert.equal(harness.alerts.length, 0)
 }
 
-function createManagerStorageFixture() {
+function createManagerStorageFixture(options = {}) {
   const values = new Map([
     ['DevilConnection_sf', 'sf-value'],
     ['DevilConnection_tyrano_data', 'save-value'],
@@ -909,9 +949,13 @@ function createManagerStorageFixture() {
   const removed = []
   const written = []
   let flushes = 0
+  const flushOutcomes = (options.flushOutcomes || []).slice()
   const storage = {
+    ready: options.ready || Promise.resolve(true),
     flush() {
       flushes++
+      const outcome = flushOutcomes.shift()
+      if (outcome instanceof Error) return Promise.reject(outcome)
       return Promise.resolve()
     },
     getItem(key) {
@@ -930,6 +974,42 @@ function createManagerStorageFixture() {
     },
   }
   return { get flushes() { return flushes }, removed, storage, values, written }
+}
+
+function createDeferred() {
+  let resolve
+  const promise = new Promise((resolvePromise) => {
+    resolve = resolvePromise
+  })
+  return { promise, resolve }
+}
+
+function createSaveImportStubs(entries, options = {}) {
+  let loadCalls = 0
+  function FileReader() {}
+  FileReader.prototype.readAsArrayBuffer = function readAsArrayBuffer() {
+    this.onload({ target: { result: new ArrayBuffer(0) } })
+  }
+  function JSZip() {}
+  JSZip.loadAsync = function loadAsync() {
+    loadCalls++
+    if (options.loadError) return Promise.reject(options.loadError)
+    return Promise.resolve({
+      forEach(callback) {
+        entries.forEach(function(entry) {
+          callback(entry[0], {
+            dir: false,
+            async() {
+              return entry[1] instanceof Error
+                ? Promise.reject(entry[1])
+                : Promise.resolve(entry[1])
+            },
+          })
+        })
+      },
+    })
+  }
+  return { FileReader, JSZip, get loadCalls() { return loadCalls } }
 }
 
 async function testClearSavesKeepsNonSaveStorage() {
@@ -973,44 +1053,202 @@ async function testExportIncludesOnlySaveStorage() {
   assert.equal(files.has('_tyrano_browser_plugins%2Fconfig%2Ftest.json.sav'), false)
 }
 
+async function testSaveManagerWaitsForStorageReady() {
+  const exportReady = createDeferred()
+  const exportFixture = createManagerStorageFixture({ ready: exportReady.promise })
+  const exportedFiles = new Map()
+  let generated = 0
+  function JSZip() {}
+  JSZip.prototype.file = function file(name, value) {
+    exportedFiles.set(name, value)
+  }
+  JSZip.prototype.generateAsync = function generateAsync() {
+    generated++
+    return Promise.resolve({})
+  }
+  const exportHarness = createManagerHarness({ JSZip, storage: exportFixture.storage })
+
+  exportHarness.context.toggleSaveImport()
+  await flushMicrotasks()
+  assert.equal(exportedFiles.size, 0)
+  assert.equal(generated, 0)
+
+  exportReady.resolve(true)
+  await flushMicrotasks()
+  assert.equal(exportedFiles.size, 3)
+  assert.equal(generated, 1)
+
+  const clearReady = createDeferred()
+  const clearFixture = createManagerStorageFixture({ ready: clearReady.promise })
+  const clearHarness = createManagerHarness({ storage: clearFixture.storage })
+
+  clearHarness.context.clearAllSaves()
+  await flushMicrotasks()
+  assert.equal(clearFixture.removed.length, 0)
+
+  clearReady.resolve(true)
+  await flushMicrotasks()
+  assert.equal(clearFixture.removed.length, 3)
+
+  const importReady = createDeferred()
+  const importFixture = createManagerStorageFixture({ ready: importReady.promise })
+  const importStubs = createSaveImportStubs([
+    ['DevilConnection_ready_slot.sav', JSON.stringify({ slot: 'ready' })],
+  ])
+  const importHarness = createManagerHarness({
+    FileReader: importStubs.FileReader,
+    JSZip: importStubs.JSZip,
+    storage: importFixture.storage,
+  })
+
+  importHarness.elements.get('import_save_input').listeners.change({
+    target: { files: [{}] },
+  })
+  await flushMicrotasks()
+  assert.equal(importStubs.loadCalls, 0)
+  assert.equal(importFixture.written.length, 0)
+
+  importReady.resolve(true)
+  await flushMicrotasks()
+  assert.equal(importStubs.loadCalls, 1)
+  assert.deepEqual(importFixture.written, [
+    ['DevilConnection_ready_slot', JSON.stringify({ slot: 'ready' })],
+  ])
+}
+
+async function testExportFailureIsReported() {
+  const fixture = createManagerStorageFixture()
+  function JSZip() {}
+  JSZip.prototype.file = function file() {}
+  JSZip.prototype.generateAsync = function generateAsync(options, onUpdate) {
+    onUpdate({ percent: 42 })
+    return Promise.reject(new Error('archive out of memory'))
+  }
+  const harness = createManagerHarness({ JSZip, storage: fixture.storage })
+
+  harness.context.toggleSaveImport()
+  await flushMicrotasks()
+
+  assert.match(harness.alerts.at(-1), /导出失败：archive out of memory/)
+  assert.equal(harness.elements.get('save_operation_status').textContent, '')
+  assert.equal(harness.context._importingSave, false)
+}
+
 async function testImportIgnoresNonSaveStorage() {
   const fixture = createManagerStorageFixture()
-  function FileReader() {}
-  FileReader.prototype.readAsArrayBuffer = function readAsArrayBuffer() {
-    this.onload({ target: { result: new ArrayBuffer(0) } })
-  }
-  function JSZip() {}
-  JSZip.loadAsync = function loadAsync() {
-    return Promise.resolve({
-      forEach(callback) {
-        var entries = {
-          'DevilConnection_sf.sav': 'imported-sf',
-          'NEO.sav': 'imported-neo',
-          'mod_config_test.sav': 'injected-mod-config',
-          '_tyrano_browser_secret.sav': 'injected-file-data',
-        }
-        Object.keys(entries).forEach(function(name) {
-          callback(name, {
-            dir: false,
-            async() { return Promise.resolve(entries[name]) },
-          })
-        })
-      },
-    })
-  }
-  const harness = createManagerHarness({ FileReader, JSZip, storage: fixture.storage })
+  const importedSf = encodeURIComponent(JSON.stringify({ imported: 'sf' }))
+  const importedNeo = JSON.stringify('imported-neo')
+  const stubs = createSaveImportStubs([
+    ['DevilConnection_sf.sav', importedSf],
+    ['NEO.sav', importedNeo],
+    ['mod_config_test.sav', 'injected-mod-config'],
+    ['_tyrano_browser_secret.sav', 'injected-file-data'],
+  ])
+  const harness = createManagerHarness({
+    FileReader: stubs.FileReader,
+    JSZip: stubs.JSZip,
+    storage: fixture.storage,
+  })
   const importInput = harness.elements.get('import_save_input')
 
   importInput.listeners.change({ target: { files: [{}] } })
   await flushMicrotasks()
 
   assert.deepEqual(fixture.written.sort(), [
-    ['DevilConnection_sf', 'imported-sf'],
-    ['NEO', 'imported-neo'],
+    ['DevilConnection_sf', importedSf],
+    ['NEO', importedNeo],
   ].sort())
   assert.equal(fixture.values.get('mod_config_test'), 'mod-value')
   assert.equal(fixture.values.has('_tyrano_browser_secret'), false)
   assert.match(harness.alerts.at(-1), /2 个非存档项已忽略/)
+}
+
+async function testImportRejectsInvalidAndDuplicateSaves() {
+  const invalidFixture = createManagerStorageFixture()
+  const invalidStubs = createSaveImportStubs([
+    ['DevilConnection_sf.sav', JSON.stringify({ imported: true })],
+    ['NEO.sav', 'not-json'],
+  ])
+  const invalidHarness = createManagerHarness({
+    FileReader: invalidStubs.FileReader,
+    JSZip: invalidStubs.JSZip,
+    storage: invalidFixture.storage,
+  })
+
+  invalidHarness.elements.get('import_save_input').listeners.change({ target: { files: [{}] } })
+  await flushMicrotasks()
+
+  assert.deepEqual(invalidFixture.written, [])
+  assert.equal(invalidFixture.flushes, 0)
+  assert.equal(invalidFixture.values.get('DevilConnection_sf'), 'sf-value')
+  assert.match(invalidHarness.alerts.at(-1), /存档内容无效或已损坏：NEO/)
+
+  const duplicateFixture = createManagerStorageFixture()
+  const duplicateStubs = createSaveImportStubs([
+    ['DevilConnection_sf.sav', JSON.stringify({ first: true })],
+    ['DevilConnection_%73f.sav', JSON.stringify({ second: true })],
+  ])
+  const duplicateHarness = createManagerHarness({
+    FileReader: duplicateStubs.FileReader,
+    JSZip: duplicateStubs.JSZip,
+    storage: duplicateFixture.storage,
+  })
+
+  duplicateHarness.elements.get('import_save_input').listeners.change({ target: { files: [{}] } })
+  await flushMicrotasks()
+
+  assert.deepEqual(duplicateFixture.written, [])
+  assert.equal(duplicateFixture.flushes, 0)
+  assert.match(duplicateHarness.alerts.at(-1), /重复存档键：DevilConnection_sf/)
+}
+
+async function testImportCanCancelOverwriteBeforeWriting() {
+  const fixture = createManagerStorageFixture()
+  const stubs = createSaveImportStubs([
+    ['DevilConnection_sf.sav', JSON.stringify({ imported: true })],
+  ])
+  const harness = createManagerHarness({
+    FileReader: stubs.FileReader,
+    JSZip: stubs.JSZip,
+    confirmHandler(message) {
+      return message.indexOf('导入将覆盖') === -1
+    },
+    storage: fixture.storage,
+  })
+
+  harness.elements.get('import_save_input').listeners.change({ target: { files: [{}] } })
+  await flushMicrotasks()
+
+  assert.deepEqual(fixture.written, [])
+  assert.equal(fixture.flushes, 0)
+  assert.match(harness.confirmations.at(-1), /覆盖 1 个现有存档/)
+  assert.equal(fixture.values.get('DevilConnection_sf'), 'sf-value')
+}
+
+async function testImportWriteFailureRestoresPreviousSaves() {
+  const writeError = Object.assign(new Error('quota exceeded'), { name: 'QuotaExceededError' })
+  const fixture = createManagerStorageFixture({ flushOutcomes: [writeError, null] })
+  const importedSf = JSON.stringify({ imported: true })
+  const stubs = createSaveImportStubs([
+    ['DevilConnection_sf.sav', importedSf],
+  ])
+  const harness = createManagerHarness({
+    FileReader: stubs.FileReader,
+    JSZip: stubs.JSZip,
+    storage: fixture.storage,
+  })
+
+  harness.elements.get('import_save_input').listeners.change({ target: { files: [{}] } })
+  await flushMicrotasks()
+
+  assert.equal(fixture.flushes, 2)
+  assert.deepEqual(fixture.written, [
+    ['DevilConnection_sf', importedSf],
+    ['DevilConnection_sf', 'sf-value'],
+  ])
+  assert.equal(fixture.values.get('DevilConnection_sf'), 'sf-value')
+  assert.match(harness.alerts.at(-1), /浏览器存储写入失败，原有存档已恢复/)
+  assert.doesNotMatch(harness.alerts.at(-1), /ZIP 格式错误/)
 }
 
 const managerTests = [
@@ -1023,7 +1261,12 @@ const managerTests = [
   ['successful startup still starts game', testSuccessfulStartupStillStartsGame],
   ['clear saves keeps non-save storage', testClearSavesKeepsNonSaveStorage],
   ['export includes only save storage', testExportIncludesOnlySaveStorage],
+  ['save manager waits for storage ready', testSaveManagerWaitsForStorageReady],
+  ['export failure is reported', testExportFailureIsReported],
   ['import ignores non-save storage', testImportIgnoresNonSaveStorage],
+  ['import rejects invalid and duplicate saves', testImportRejectsInvalidAndDuplicateSaves],
+  ['import can cancel overwrite before writing', testImportCanCancelOverwriteBeforeWriting],
+  ['import write failure restores previous saves', testImportWriteFailureRestoresPreviousSaves],
 ]
 
 function renderMarkdown(markdown) {
