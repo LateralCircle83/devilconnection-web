@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.ModLoader) {
       ModLoader.init(ids).then(go).catch(function(e) {
         if (ids.length) {
-          failStart('模组加载器初始化失败', e && e.message ? e.message : String(e))
+          failStart('所选模组加载失败', e && e.message ? e.message : String(e))
         } else {
           console.warn('ModLoader init failed; starting without mods', e)
           go()
@@ -361,7 +361,18 @@ document.addEventListener('DOMContentLoaded', function() {
     reader.onload = function(ev) {
       var buf = ev.target.result
       if (window.ModLoader) {
-        var meta = ModLoader.readAsarMeta(buf) || {}
+        var meta
+        try {
+          meta = ModLoader.readAsarMeta(buf)
+        } catch (err) {
+          console.warn('本地模组解析失败:', file.name, err)
+          alert('模组导入失败：ASAR 文件无效或已损坏')
+          return
+        }
+        if (meta === null) {
+          alert('模组导入失败：ASAR 文件无效或已损坏')
+          return
+        }
         var name = meta.name || file.name.replace(/\.asar$/, '')
         var localId = meta.id || file.name.replace(/\.asar$/, '').replace(/[^a-zA-Z0-9_]/g, '_')
         ModLoader.registerLocalMod(localId, buf.slice(0))

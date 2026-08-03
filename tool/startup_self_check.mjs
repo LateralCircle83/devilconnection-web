@@ -771,7 +771,9 @@ function createManagerHarness(options = {}) {
 
   context.document = document
   context.window = context
-  if (options.modLoaderFails) {
+  if (options.modLoader) {
+    context.ModLoader = options.modLoader
+  } else if (options.modLoaderFails) {
     context.ModLoader = {
       getModList() {
         return Promise.resolve([])
@@ -840,8 +842,36 @@ async function testModLoaderFailureStopsStartup() {
   await clickStart(harness)
 
   assert.equal(harness.loaded.length, 0)
+  assert.match(harness.alerts[0], /所选模组加载失败/)
   assert.match(harness.alerts[0], /mod init failed/)
   assertStartupStopped(harness)
+}
+
+async function testInvalidLocalAsarIsRejectedBeforeSelection() {
+  let registrations = 0
+  function FileReader() {}
+  FileReader.prototype.readAsArrayBuffer = function readAsArrayBuffer() {
+    this.onload({ target: { result: new ArrayBuffer(8) } })
+  }
+  const modLoader = {
+    getModList() {
+      return Promise.resolve([])
+    },
+    readAsarMeta() {
+      return null
+    },
+    registerLocalMod() {
+      registrations++
+    },
+  }
+  const harness = createManagerHarness({ FileReader, modLoader })
+  const fileInput = harness.elements.get('asar_file_input')
+
+  fileInput.listeners.change({ target: { files: [{ name: 'broken.asar' }] } })
+  await flushMicrotasks()
+
+  assert.equal(registrations, 0)
+  assert.match(harness.alerts.at(-1), /ASAR 文件无效或已损坏/)
 }
 
 async function testModLoaderFailureWithoutSelectionContinues() {
@@ -988,6 +1018,7 @@ const managerTests = [
   ['browser patch error stops startup', testBrowserPatchErrorStopsStartup],
   ['sanity check stops unpatched startup', testSanityCheckStopsUnpatchedStartup],
   ['ModLoader failure stops startup', testModLoaderFailureStopsStartup],
+  ['invalid local ASAR is rejected before selection', testInvalidLocalAsarIsRejectedBeforeSelection],
   ['ModLoader failure without selection continues', testModLoaderFailureWithoutSelectionContinues],
   ['successful startup still starts game', testSuccessfulStartupStillStartsGame],
   ['clear saves keeps non-save storage', testClearSavesKeepsNonSaveStorage],

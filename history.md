@@ -264,3 +264,9 @@
 - 定时及页面生命周期触发的 `flush()` 统一处理 rejection，失败时提示最新进度尚未安全落盘，并可直接导出当前内存存档作为应急备份
 - localStorage fallback 不再静默吞掉配额错误，失败写入同样保留 pending 并向用户报告
 - `startup_self_check.mjs` 新增事务失败/终止重试、启动加载竞态、失败期间并发写入、定时错误提示、localStorage 配额/删除失败及多轮故障回归测试
+
+### 修复：选中模组加载失败后仍进入游戏
+- `ModLoader.init(selectedIds)` 改为全有或全无：模组清单、网络、HTTP、ASAR 读取/解析及选中 ID 校验失败都会携带具体模组信息 reject，不再静默跳过
+- 任一选中模组失败会清除本批次已建立的文件索引并保持未初始化状态，资源恢复后可在同一页面重试；空选择及全部本地模组不再依赖 `mods.json`
+- 管理器收到 rejection 后停止引擎启动并显示“所选模组加载失败”；无效本地 ASAR 在进入可选列表前即被拒绝
+- `modloader_self_check.mjs` 与 `startup_self_check.mjs` 新增清单/下载/读取/解析失败、未知 ID、本地损坏、整批回滚、重试及管理器提示回归测试

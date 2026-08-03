@@ -62,6 +62,13 @@ and place new compatibility code at the boundary that owns it.
 
 ## Invariants
 
+- `ModLoader.init(selectedIds)` is all-or-nothing for a non-empty selection.
+  Missing manifest entries and ASAR fetch, read, or parse failures must reject
+  with the affected mod id; `initialized` is set only after every selected mod
+  has been indexed. Failed batches clear their partial index and remain
+  retryable in the same page session.
+- Invalid local ASAR files must be rejected before the manager adds them to the
+  selectable mod list.
 - Resource interceptors must be installed once. Repeated `init()` calls should
   not wrap browser APIs again.
 - ASAR header and file entries must be validated before indexing:
@@ -100,6 +107,8 @@ Then manually test:
 
 - Start with no mods selected.
 - Start with built-in mods selected.
+- Confirm a missing or damaged selected ASAR stops startup, names the failed
+  mod, and succeeds after the resource is restored and startup is retried.
 - Import a local ASAR, reorder it, and start.
 - Confirm resource overrides work for same-origin absolute URLs and query/hash
   cache-busted URLs.

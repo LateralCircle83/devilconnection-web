@@ -254,12 +254,19 @@ function createHarness(options = {}) {
   async function fetchStub(input, init) {
     const url = typeof input === 'string' ? input : (input && input.url) || ''
     fetchCalls.push({ input, init, url })
+    if (options.fetchErrors && Object.prototype.hasOwnProperty.call(options.fetchErrors, url)) {
+      throw options.fetchErrors[url]
+    }
     if (url === './mods/mods.json') {
       const modList = options.modList || []
+      const status = options.modListStatus === undefined ? 200 : options.modListStatus
       return {
-        ok: true,
-        status: 200,
-        json: async () => modList,
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => {
+          if (options.modListJSONError) throw options.modListJSONError
+          return modList
+        },
         arrayBuffer: async () => new ArrayBuffer(0),
         text: async () => JSON.stringify(modList),
       }
@@ -270,7 +277,15 @@ function createHarness(options = {}) {
         ok: true,
         status: 200,
         json: async () => ({}),
-        arrayBuffer: async () => buffer,
+        arrayBuffer: async () => {
+          if (
+            options.arrayBufferErrors &&
+            Object.prototype.hasOwnProperty.call(options.arrayBufferErrors, url)
+          ) {
+            throw options.arrayBufferErrors[url]
+          }
+          return buffer
+        },
         text: async () => '',
       }
     }
@@ -406,18 +421,154 @@ async function testRepeatedInitGuard() {
   const originalFetch = context.fetch
 
   assert.equal(await ModLoader.init([]), true)
-  assert.equal(countModIndexFetches(fetchCalls), 1)
+  assert.equal(countModIndexFetches(fetchCalls), 0, 'empty selection should not require mods.json')
   const wrappedFetch = context.fetch
   assert.notEqual(wrappedFetch, originalFetch, 'init should wire fetch in a browser-like environment')
 
   assert.equal(await ModLoader.init([]), true)
   assert.equal(await ModLoader.init(['different-after-init']), true)
   assert.equal(context.fetch, wrappedFetch, 'repeated init should not wrap fetch again')
-  assert.equal(countModIndexFetches(fetchCalls), 1, 'repeated init should not reload mods.json')
+  assert.equal(countModIndexFetches(fetchCalls), 0, 'repeated empty init should not load mods.json')
   assert.ok(
     warnings.some((line) => line.includes('init already completed; ignoring different mod selection')),
     'different repeated init should warn instead of mutating loaded state',
   )
+}
+
+async function testSelectedModHTTPFailureRejects() {
+  const modId = 'missing-mod'
+  const { ModLoader } = createHarness({
+    modList: [{ id: modId, name: 'Missing mod', file: 'missing.asar' }],
+  })
+
+  await assert.rejects(ModLoader.init([modId]), function (error) {
+    assert.equal(error.name, 'ModLoadError')
+    assert.equal(error.modId, modId)
+    assert.equal(error.stage, 'http')
+    assert.match(error.message, /HTTP 404/)
+    return true
+  })
+}
+
+async function testSelectedModManifestFailuresReject() {
+  const networkHarness = createHarness({
+    fetchErrors: { './mods/mods.json': new Error('catalog offline') },
+  })
+  await assert.rejects(networkHarness.ModLoader.init(['catalog-mod']), {
+    name: 'ModLoadError',
+    stage: 'manifest',
+  })
+
+  const httpHarness = createHarness({ modListStatus: 503 })
+  await assert.rejects(httpHarness.ModLoader.init(['catalog-mod']), {
+    name: 'ModLoadError',
+    stage: 'manifest',
+  })
+
+  const jsonHarness = createHarness({ modListJSONError: new Error('invalid json') })
+  await assert.rejects(jsonHarness.ModLoader.init(['catalog-mod']), {
+    name: 'ModLoadError',
+    stage: 'manifest',
+  })
+
+  const emptyHarness = createHarness({ modListStatus: 503 })
+  assert.equal(await emptyHarness.ModLoader.init([]), true)
+
+  const localHarness = createHarness({ modListStatus: 503 })
+  localHarness.ModLoader.registerLocalMod(
+    'local-only',
+    buildAsar({ 'local-only.txt': 'local' }),
+  )
+  assert.equal(await localHarness.ModLoader.init(['local-only']), true)
+  assert.equal(localHarness.ModLoader.hasFile('local-only.txt'), true)
+  assert.equal(countModIndexFetches(localHarness.fetchCalls), 0)
+}
+
+async function testSelectedModNetworkAndReadFailuresReject() {
+  const networkId = 'network-mod'
+  const networkURL = './mods/network.asar'
+  const networkHarness = createHarness({
+    modList: [{ id: networkId, file: 'network.asar' }],
+    fetchErrors: { [networkURL]: new Error('connection lost') },
+  })
+  await assert.rejects(networkHarness.ModLoader.init([networkId]), {
+    name: 'ModLoadError',
+    modId: networkId,
+    stage: 'fetch',
+  })
+
+  const readId = 'read-mod'
+  const readURL = './mods/read.asar'
+  const readHarness = createHarness({
+    modList: [{ id: readId, file: 'read.asar' }],
+    fetchBuffers: { [readURL]: buildAsar({ 'ok.txt': 'ok' }) },
+    arrayBufferErrors: { [readURL]: new Error('stream interrupted') },
+  })
+  await assert.rejects(readHarness.ModLoader.init([readId]), {
+    name: 'ModLoadError',
+    modId: readId,
+    stage: 'read',
+  })
+}
+
+async function testSelectedModParseFailureRejects() {
+  const modId = 'broken-mod'
+  const url = './mods/broken.asar'
+  const { ModLoader } = createHarness({
+    modList: [{ id: modId, file: 'broken.asar' }],
+    fetchBuffers: { [url]: new ArrayBuffer(8) },
+  })
+
+  await assert.rejects(ModLoader.init([modId]), {
+    name: 'ModLoadError',
+    modId,
+    stage: 'parse',
+  })
+}
+
+async function testUnknownAndInvalidLocalSelectionsReject() {
+  const unknownHarness = createHarness({ modList: [] })
+  await assert.rejects(unknownHarness.ModLoader.init(['unknown-mod']), {
+    name: 'ModLoadError',
+    modId: 'unknown-mod',
+    stage: 'selection',
+  })
+
+  const localHarness = createHarness()
+  localHarness.ModLoader.registerLocalMod('broken-local', new ArrayBuffer(8))
+  await assert.rejects(localHarness.ModLoader.init(['broken-local']), {
+    name: 'ModLoadError',
+    modId: 'broken-local',
+    stage: 'parse',
+  })
+}
+
+async function testFailedBatchRollsBackAndCanRetry() {
+  const goodURL = './mods/good.asar'
+  const retryURL = './mods/retry.asar'
+  const fetchBuffers = {
+    [goodURL]: buildAsar({ 'good.txt': 'good', 'shared.txt': 'first' }),
+  }
+  const { ModLoader } = createHarness({
+    modList: [
+      { id: 'good-mod', file: 'good.asar' },
+      { id: 'retry-mod', file: 'retry.asar' },
+    ],
+    fetchBuffers,
+  })
+
+  await assert.rejects(ModLoader.init(['good-mod', 'retry-mod']), {
+    name: 'ModLoadError',
+    modId: 'retry-mod',
+    stage: 'http',
+  })
+  assert.equal(ModLoader.hasFile('good.txt'), false, 'failed batches must roll back earlier indexes')
+
+  fetchBuffers[retryURL] = buildAsar({ 'retry.txt': 'retry', 'shared.txt': 'second' })
+  assert.equal(await ModLoader.init(['good-mod', 'retry-mod']), true)
+  assert.equal(ModLoader.hasFile('good.txt'), true)
+  assert.equal(ModLoader.hasFile('retry.txt'), true)
+  assert.equal(ModLoader.getFileText('shared.txt'), 'second', 'selected order should still control overrides')
 }
 
 async function testXHRInterceptorPreservesOpenArguments() {
@@ -663,6 +814,12 @@ const tests = [
   ['ASAR path normalization', testAsarPathNormalization],
   ['ASAR offset validation', testAsarOffsetValidation],
   ['repeated init guard', testRepeatedInitGuard],
+  ['selected mod HTTP failure rejects', testSelectedModHTTPFailureRejects],
+  ['selected mod manifest failures reject', testSelectedModManifestFailuresReject],
+  ['selected mod network and read failures reject', testSelectedModNetworkAndReadFailuresReject],
+  ['selected mod parse failure rejects', testSelectedModParseFailureRejects],
+  ['unknown and invalid local selections reject', testUnknownAndInvalidLocalSelectionsReject],
+  ['failed batch rolls back and can retry', testFailedBatchRollsBackAndCanRetry],
   ['XHR interceptor argument preservation', testXHRInterceptorPreservesOpenArguments],
   ['fetch interceptor init preservation', testFetchInterceptorPreservesInit],
   ['fetch interceptor Request preservation', testFetchInterceptorPreservesRequestInput],

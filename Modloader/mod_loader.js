@@ -212,6 +212,20 @@
     fileIndex = new Map()
   }
 
+  function createModLoadError(modId, stage, detail, cause) {
+    var target = modId
+      ? '模组 "' + modId + '"'
+      : stage === 'manifest'
+        ? '模组清单'
+        : '模组加载器'
+    var error = new Error(target + '加载失败' + (detail ? '：' + detail : ''))
+    error.name = 'ModLoadError'
+    error.modId = modId || ''
+    error.stage = stage || 'unknown'
+    if (cause) error.cause = cause
+    return error
+  }
+
   function readParsedFileData(asar, path) {
     if (!asar || !asar.files) return null
     var entry = asar.files.get(normalizeAsarPath(path))
@@ -533,26 +547,46 @@
 
   window.ModLoader = {
     // Load a single ASAR and index its files
-    loadAsar: async function (asarUrl) {
+    loadAsar: async function (asarUrl, modId) {
+      modId = modId || asarUrl
       var resp
       try {
         resp = await fetch(asarUrl)
       } catch (e) {
-        console.warn('ModLoader: failed to fetch', asarUrl, e)
-        return false
+        throw createModLoadError(
+          modId,
+          'fetch',
+          '网络请求失败' + (e && e.message ? '（' + e.message + '）' : ''),
+          e
+        )
       }
       if (!resp.ok) {
-        console.warn('ModLoader: fetch failed', asarUrl, resp.status)
-        return false
+        throw createModLoadError(modId, 'http', 'HTTP ' + resp.status + '，文件：' + asarUrl)
       }
       var buffer
       try {
         buffer = await resp.arrayBuffer()
       } catch (e) {
-        console.warn('ModLoader: failed to read buffer', e)
-        return false
+        throw createModLoadError(
+          modId,
+          'read',
+          '读取 ASAR 内容失败' + (e && e.message ? '（' + e.message + '）' : ''),
+          e
+        )
       }
-      return this.parseAndIndex(buffer)
+      var result
+      try {
+        result = this.parseAndIndex(buffer)
+      } catch (e) {
+        throw createModLoadError(
+          modId,
+          'parse',
+          '解析 ASAR 时发生异常' + (e && e.message ? '（' + e.message + '）' : ''),
+          e
+        )
+      }
+      if (!result) throw createModLoadError(modId, 'parse', 'ASAR 文件无效或已损坏')
+      return result
     },
 
     // Parse an ArrayBuffer ASAR and add to file index; returns { meta, asarIdx }
@@ -594,6 +628,9 @@
 
     init: async function (selectedIds) {
       selectedIds = selectedIds || []
+      if (!Array.isArray(selectedIds)) {
+        throw createModLoadError('', 'selection', '选中模组列表格式无效')
+      }
       var selectedKey = selectedIds.join('\n')
       if (initialized) {
         if (selectedKey !== initSelectedKey) console.warn('ModLoader: init already completed; ignoring different mod selection')
@@ -604,33 +641,82 @@
       var self = this
       initPromise = (async function () {
         resetLoadedState()
-        var resp = await fetch('./mods/mods.json')
+        var selectedSeen = Object.create(null)
+        var requiresManifest = false
+        for (var checkIdx = 0; checkIdx < selectedIds.length; checkIdx++) {
+          var selectedId = selectedIds[checkIdx]
+          if (typeof selectedId !== 'string' || !selectedId) {
+            throw createModLoadError('', 'selection', '选中模组 ID 无效')
+          }
+          if (selectedSeen[selectedId]) {
+            throw createModLoadError(selectedId, 'selection', '选中列表包含重复 ID')
+          }
+          selectedSeen[selectedId] = true
+          if (!Object.prototype.hasOwnProperty.call(self._localBuffers, selectedId)) {
+            requiresManifest = true
+          }
+        }
+
         var modList = []
-        if (resp.ok) modList = await resp.json()
+        if (requiresManifest) {
+          var resp
+          try {
+            resp = await fetch('./mods/mods.json')
+          } catch (e) {
+            throw createModLoadError(
+              '',
+              'manifest',
+              '网络请求失败' + (e && e.message ? '（' + e.message + '）' : ''),
+              e
+            )
+          }
+          if (!resp.ok) {
+            throw createModLoadError('', 'manifest', 'HTTP ' + resp.status)
+          }
+          try {
+            modList = await resp.json()
+          } catch (e) {
+            throw createModLoadError('', 'manifest', 'JSON 解析失败', e)
+          }
+          if (!Array.isArray(modList)) {
+            throw createModLoadError('', 'manifest', '清单内容不是数组')
+          }
+        }
         // 按 selectedIds 的顺序加载模组（拖拽排序后的顺序）
-        var modMap = {}
+        var modMap = Object.create(null)
         for (var mi = 0; mi < modList.length; mi++) modMap[modList[mi].id] = modList[mi]
         var loadedMods = []
         for (var si = 0; si < selectedIds.length; si++) {
           var sid = selectedIds[si]
           var entry = modMap[sid]
-          if (self._localBuffers[sid]) {
+          if (Object.prototype.hasOwnProperty.call(self._localBuffers, sid)) {
             // 本地导入的同 id ASAR 只在当前页面会话内覆盖内置模组。
-            var idxBeforeLocal = loadedAsars.length
-            var result = self.parseAndIndex(self._localBuffers[sid])
-            if (result) {
-              console.log('ModLoader: loaded local mod', sid)
-              loadedMods.push({ id: sid, asarIdx: idxBeforeLocal })
+            var result
+            try {
+              result = self.parseAndIndex(self._localBuffers[sid])
+            } catch (e) {
+              throw createModLoadError(
+                sid,
+                'parse',
+                '解析本地 ASAR 时发生异常' + (e && e.message ? '（' + e.message + '）' : ''),
+                e
+              )
             }
-          } else if (entry) {
+            if (!result) throw createModLoadError(sid, 'parse', '本地 ASAR 文件无效或已损坏')
+            console.log('ModLoader: loaded local mod', sid)
+            loadedMods.push({ id: sid, asarIdx: result.asarIdx })
+          } else {
+            if (!entry || !entry.file) {
+              throw createModLoadError(sid, 'selection', '未在 mods.json 中找到对应文件')
+            }
             // 常规模组
-            var idxBefore = loadedAsars.length
-            var ok = await self.loadAsar('./mods/' + entry.file)
-            if (ok) {
-              console.log('ModLoader: loaded', entry.name)
-              loadedMods.push({ id: entry.id, asarIdx: idxBefore })
-            }
+            var loaded = await self.loadAsar('./mods/' + entry.file, sid)
+            console.log('ModLoader: loaded', entry.name)
+            loadedMods.push({ id: sid, asarIdx: loaded.asarIdx })
           }
+        }
+        if (loadedMods.length !== selectedIds.length) {
+          throw createModLoadError('', 'selection', '部分选中模组未完成加载')
         }
         wireInterceptors()
         // Execute hook.js from ALL loaded ASARs (including local ones from parseAndIndex)
@@ -652,6 +738,8 @@
         return await initPromise
       } catch (e) {
         resetLoadedState()
+        initialized = false
+        initSelectedKey = ''
         throw e
       } finally {
         initPromise = null
