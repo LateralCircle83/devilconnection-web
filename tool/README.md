@@ -16,8 +16,9 @@ self-checks below. Run an individual script only when narrowing down a failure.
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage fallback, failed-write retry, initialization/concurrent-write preservation, and shared save-format decoding; manager storage-readiness, archive validation/rollback, save-key isolation, and startup failure; and manager README Markdown rendering in one small VM harness. Use `node tool/startup_self_check.mjs browser-shell`, `node tool/startup_self_check.mjs manager`, or `node tool/startup_self_check.mjs markdown` for a single suite. |
-| `modloader_self_check.mjs` | `npm run check:modloader` | Runs the real `Modloader/mod_loader.js` inside a small browser-like VM harness and checks ASAR path validation, selected-mod failure propagation and rollback/retry, repeated `init()`, and interceptor semantic preservation. |
+| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage/save regressions and manager startup, archive, Markdown, and input-scroll checks. Pass `browser-shell`, `manager`, or `markdown` to run one suite. |
+| `modloader_self_check.mjs` | `npm run check:modloader` | Runs the real loader in a browser-like VM and checks ASAR validation, failure rollback/retry, repeated initialization, and interceptor semantics. |
+| `safe_apng_self_check.mjs` | `npm run check:apng` | Executes the APNG loader directly from its ASAR and checks lazy/eager behavior, retry, deduplication, repeated loading, theatre curtains, preload budget, and package layout. |
 | `check_css.mjs` | `node tool/check_css.mjs` | Checks whether manager UI classes used in `index.html` and `Modloader/manager.js` templates have matching selectors in `Modloader/manager.css`. This is only a rough UI sanity check. |
 | `pack.mjs` | `node tool/pack.mjs <input-dir> <output.asar>` | Packs a directory into a simple ASAR file for local ModLoader testing. It does not encrypt or sign the package. |
 | `decrypt.js` | `node tool/decrypt.js <mod.asar> [output-dir]` | Offline helper for AI agents/maintainers to inspect encrypted `DC_ENC_v1` ASAR mods that contain the expected `.env` metadata. Use only on trusted local files. |

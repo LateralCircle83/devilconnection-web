@@ -39,6 +39,8 @@ and place new compatibility code at the boundary that owns it.
 
 - Owns the browser UI for selecting, importing, ordering, configuring, and
   importing/exporting mod-related data, plus the pre-start save archive UI.
+- Honors `defaultEnabled: false` on built-in manifest entries; entries without
+  that field keep the historical default-enabled behavior.
 - Does not parse ASAR internals except through `ModLoader` helper APIs.
 - Local imported ASAR files are intentionally session-only.
 

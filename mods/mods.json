@@ -1,34 +1,19 @@
 [
     {
+        "id": "dc_safe_apng",
+        "name": "兼容型动画懒加载",
+        "description": "按需解码非关键 APNG，降低移动端启动内存峰值；出现兼容问题时可在启动前关闭",
+        "file": "dc_safe_apng.asar",
+        "version": "1.0.0",
+        "author": "DevilConnection Browser Port",
+        "defaultEnabled": false
+    },
+    {
         "id": "dc_modworkshop",
         "name": "DCML 模组工坊",
         "description": "模组管理界面与工坊商店",
         "file": "dc_modworkshop.asar",
         "version": "1.0.0",
-        "author": "https://github.com/Luoyu-Wangchai"
-    },
-    {
-        "id": "dc_kupya_plus",
-        "name": "库皮亚交互增强",
-        "description": "后日谈的库皮亚新增一些台词；收藏室书架上必定出现小憩的库皮亚，且可以互动",
-        "file": "dc_kupya_plus.asar",
-        "version": "1.2.0",
-        "author": "https://github.com/Luoyu-Wangchai"
-    },
-    {
-        "id": "dc_theatre",
-        "name": "库啪哒呀小剧场",
-        "description": "登上小剧场舞台，与库皮亚和德比伦即兴聊天互动！",
-        "file": "dc_theatre.asar",
-        "version": "1.2.3",
-        "author": "https://github.com/Luoyu-Wangchai"
-    },
-    {
-        "id": "dc_doeru_plus",
-        "name": "更多二世多艾露",
-        "description": "第一周目连结佩恩时为其装备恶魔之翼，即可激活二世多艾露的专属剧情，由多艾尔替代库皮亚登场! (剧本原作者Bob69693)",
-        "file": "dc_doeru_plus.asar",
-        "version": "1.0.3",
         "author": "https://github.com/Luoyu-Wangchai"
     },
     {
@@ -40,6 +25,13 @@
         "author": "https://github.com/Luoyu-Wangchai"
     },
     {
+        "id": "dc_achievement",
+        "name": "虚拟成就系统",
+        "description": "Steam 风格成就弹窗：解锁特典、MP 收集、小剧场大满贯等",
+        "file": "dc_achievement.asar",
+        "version": "1.0.0"
+    },
+    {
         "id": "dc_mind_voice",
         "name": "心声助手",
         "description": "角色心声弹窗提示：当角色触发心声时在右上角显示 toast 通知",
@@ -48,11 +40,28 @@
         "author": "移植自 心声助手.asar"
     },
     {
-        "id": "test_all",
-        "name": "全面拦截测试",
-        "description": "测试全部拦截器 + 动态引擎文件拦截（KeyConfig.js）",
-        "file": "test_all.asar",
-        "version": 100
+        "id": "dc_kupya_plus",
+        "name": "库皮亚交互增强",
+        "description": "后日谈的库皮亚新增一些台词；收藏室书架上必定出现小憩的库皮亚，且可以互动",
+        "file": "dc_kupya_plus.asar",
+        "version": "1.2.0",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_doeru_plus",
+        "name": "更多二世多艾露",
+        "description": "第一周目连结佩恩时为其装备恶魔之翼，即可激活二世多艾露的专属剧情，由多艾尔替代库皮亚登场! (剧本原作者Bob69693)",
+        "file": "dc_doeru_plus.asar",
+        "version": "1.0.3",
+        "author": "https://github.com/Luoyu-Wangchai"
+    },
+    {
+        "id": "dc_theatre",
+        "name": "库啪哒呀小剧场",
+        "description": "登上小剧场舞台，与库皮亚和德比伦即兴聊天互动！",
+        "file": "dc_theatre.asar",
+        "version": "1.2.3",
+        "author": "https://github.com/Luoyu-Wangchai"
     },
     {
         "id": "dc_debug",
@@ -62,10 +71,11 @@
         "version": "1.0.0"
     },
     {
-        "id": "dc_achievement",
-        "name": "虚拟成就系统",
-        "description": "Steam 风格成就弹窗：解锁特典、MP 收集、小剧场大满贯等",
-        "file": "dc_achievement.asar",
-        "version": "1.0.0"
+        "id": "test_all",
+        "name": "全面拦截测试",
+        "description": "测试全部拦截器 + 动态引擎文件拦截（KeyConfig.js）",
+        "file": "test_all.asar",
+        "version": 100,
+        "defaultEnabled": false
     }
 ]

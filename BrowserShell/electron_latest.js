@@ -129,6 +129,44 @@
 
   initIndexedDBSaveIntegration()
 
+  function resetGameContainerScroll() {
+    var base = document.getElementById('tyrano_base')
+    if (!base) return
+    base.scrollTop = 0
+    base.scrollLeft = 0
+  }
+
+  // A focused [edit] input can make narrow browsers scroll the clipped,
+  // scaled game container. Tyrano removes the input after [commit], but the
+  // browser keeps that scroll offset and shifts every subsequent game layer.
+  function initFormScrollReset() {
+    var commitTag = tyrano.plugin.kag.tag.commit
+    if (
+      !commitTag ||
+      typeof commitTag.start !== 'function' ||
+      commitTag._browserScrollResetPatched
+    ) {
+      return
+    }
+
+    var originalStart = commitTag.start
+    commitTag.start = function (pm) {
+      var result
+      try {
+        result = originalStart.call(this, pm)
+      } finally {
+        resetGameContainerScroll()
+        if (typeof window.requestAnimationFrame === 'function') {
+          window.requestAnimationFrame(resetGameContainerScroll)
+        }
+      }
+      return result
+    }
+    commitTag._browserScrollResetPatched = true
+  }
+
+  initFormScrollReset()
+
   /**
    * kag.init
    */

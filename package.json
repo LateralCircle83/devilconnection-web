@@ -4,9 +4,10 @@
   "description": "DevilConnection browser port",
   "private": true,
   "scripts": {
-    "check": "node --check BrowserShell/browser_api.js && node --check BrowserShell/electron_latest.js && node --check Modloader/mod_loader.js && node --check Modloader/mod_compat.js && node --check Modloader/markdown_viewer.js && node --check Modloader/manager.js && node tool/check_css.mjs && npm run check:modloader && npm run check:startup",
+    "check": "node --check BrowserShell/browser_api.js && node --check BrowserShell/electron_latest.js && node --check Modloader/mod_loader.js && node --check Modloader/mod_compat.js && node --check Modloader/markdown_viewer.js && node --check Modloader/manager.js && node tool/check_css.mjs && npm run check:modloader && npm run check:startup && npm run check:apng",
     "check:modloader": "node tool/modloader_self_check.mjs",
     "check:startup": "node tool/startup_self_check.mjs",
+    "check:apng": "node tool/safe_apng_self_check.mjs",
     "serve": "npx -y serve ."
   }
 }

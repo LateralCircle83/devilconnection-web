@@ -241,6 +241,9 @@ function createBrowserShellHarness(options = {}) {
       },
       documentElement: {},
       fullscreenElement: null,
+      getElementById(id) {
+        return id === 'tyrano_base' ? options.gameBase || null : null
+      },
       querySelectorAll() {
         return []
       },
@@ -258,6 +261,7 @@ function createBrowserShellHarness(options = {}) {
     },
     navigator: {},
     open() {},
+    requestAnimationFrame: options.requestAnimationFrame,
     setTimeout: options.setTimeout || setTimeout,
     tyrano: {
       plugin: {
@@ -269,7 +273,13 @@ function createBrowserShellHarness(options = {}) {
           define: {},
           ftag: { master_tag: {} },
           parser: {},
-          tag: {},
+          tag: {
+            commit: {
+              start: options.commitStart || function commitStart() {
+                calls.push('original-commit')
+              },
+            },
+          },
           tmp: {},
         },
       },
@@ -554,6 +564,46 @@ async function testSharedSaveDecoderIsSideEffectFree() {
   assert.equal(context.localStorage.getItem('unrelated-key'), 'keep-me')
 }
 
+async function testFormCommitResetsScaledContainerScroll() {
+  const gameBase = { scrollLeft: 17, scrollTop: 66 }
+  const animationFrames = []
+  const commitResult = { committed: true }
+  const commitContext = { name: 'tag-context' }
+  const commitParams = { source: 'test' }
+  let receivedContext = null
+  let receivedParams = null
+  const { context } = createBrowserShellHarness({
+    commitStart(pm) {
+      receivedContext = this
+      receivedParams = pm
+      return commitResult
+    },
+    gameBase,
+    requestAnimationFrame(callback) {
+      animationFrames.push(callback)
+      return animationFrames.length
+    },
+  })
+
+  const result = context.tyrano.plugin.kag.tag.commit.start.call(
+    commitContext,
+    commitParams,
+  )
+
+  assert.equal(result, commitResult)
+  assert.equal(receivedContext, commitContext)
+  assert.equal(receivedParams, commitParams)
+  assert.equal(gameBase.scrollTop, 0)
+  assert.equal(gameBase.scrollLeft, 0)
+  assert.equal(animationFrames.length, 1)
+
+  gameBase.scrollTop = 31
+  gameBase.scrollLeft = 9
+  animationFrames[0]()
+  assert.equal(gameBase.scrollTop, 0)
+  assert.equal(gameBase.scrollLeft, 0)
+}
+
 const browserShellTests = [
   ['no IndexedDB fallback still starts', testNoIndexedDBFallbackStillStarts],
   ['IndexedDB open failure still starts', testIndexedDBOpenFailureStillStarts],
@@ -567,6 +617,7 @@ const browserShellTests = [
   ['localStorage failed removal uses pending tombstone', testLocalStorageFailedRemovalUsesPendingTombstone],
   ['IndexedDB repeated failures preserve latest state', testIndexedDBRepeatedFailuresPreserveLatestState],
   ['shared save decoder is side-effect free', testSharedSaveDecoderIsSideEffectFree],
+  ['form commit resets scaled container scroll', testFormCommitResetsScaledContainerScroll],
   ['save readers preserve supported formats', testSaveReadersPreserveSupportedFormats],
   ['save readers remove only invalid data', testSaveReadersRemoveOnlyInvalidData],
 ]
@@ -935,6 +986,28 @@ async function testSuccessfulStartupStillStartsGame() {
   assert.equal(harness.alerts.length, 0)
 }
 
+async function testManifestCanDisableModByDefault() {
+  const harness = createManagerHarness({
+    modLoader: {
+      getModList() {
+        return Promise.resolve([
+          { id: 'normal-mod', name: 'Normal mod' },
+          { id: 'opt-in-mod', name: 'Opt-in mod', defaultEnabled: false },
+        ])
+      },
+    },
+  })
+  await flushMicrotasks()
+
+  const html = harness.elements.get('mod_list').innerHTML
+  const normal = html.match(/<input[^>]+data-id="normal-mod"[^>]*>/)
+  const optIn = html.match(/<input[^>]+data-id="opt-in-mod"[^>]*>/)
+  assert.ok(normal)
+  assert.ok(optIn)
+  assert.match(normal[0], / checked/)
+  assert.doesNotMatch(optIn[0], / checked/)
+}
+
 function createManagerStorageFixture(options = {}) {
   const values = new Map([
     ['DevilConnection_sf', 'sf-value'],
@@ -1259,6 +1332,7 @@ const managerTests = [
   ['invalid local ASAR is rejected before selection', testInvalidLocalAsarIsRejectedBeforeSelection],
   ['ModLoader failure without selection continues', testModLoaderFailureWithoutSelectionContinues],
   ['successful startup still starts game', testSuccessfulStartupStillStartsGame],
+  ['manifest can disable a mod by default', testManifestCanDisableModByDefault],
   ['clear saves keeps non-save storage', testClearSavesKeepsNonSaveStorage],
   ['export includes only save storage', testExportIncludesOnlySaveStorage],
   ['save manager waits for storage ready', testSaveManagerWaitsForStorageReady],

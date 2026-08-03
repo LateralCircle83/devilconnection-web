@@ -49,6 +49,8 @@ Key facts:
 ├── BrowserShell/           # Browser shell / Electron preload replacement
 │   ├── browser_api.js      # Browser shim for Electron preload APIs
 │   └── electron_latest.js  # Tyrano runtime browser patches
+├── Modloader/              # Browser ASAR loader and pre-start manager UI
+├── mods/                   # Built-in ASAR packages and their manifest
 ├── tool/                   # Local development and inspection scripts
 │   ├── README.md           # Tool usage notes and runtime debug entrypoints
 │   ├── modloader_self_check.mjs
@@ -109,6 +111,8 @@ as pointers unless they need a short warning for agent safety.
    - Disables patch application and web-patch checks.
    - Overrides the `web`, `close`, and `check_web_patch` KAG tags.
    - Hooks `TYRANO.init` so IndexedDB storage is ready before the game starts.
+   - Resets accidental `#tyrano_base` scrolling after `[commit]` form input on
+     narrow, scaled viewports.
 7. The manager overlay is removed, browser autoplay state is nudged/resumed, and `TYRANO.init()` is called.
 8. `TYRANO.init()` loads the `kag` plugin, which reads `data/system/Config.tjs` and starts `data/scenario/first.ks`.
 9. `first.ks` loads system macros (`system/tyrano.ks`, `system/builder.ks`, `system/chara_define.ks`), sets up the message window, loads plugins, and jumps to `title_screen.ks`.
@@ -205,8 +209,8 @@ npm run check
 ## Testing / debugging
 
 - There is **no automated test suite** (no Jest, Mocha, Vitest, Cypress, etc.).
-- `npm run check` is the main lightweight local verification command. Use
-  `npm run check:modloader` for a focused ModLoader regression loop.
+- `npm run check` is the main lightweight local verification command. Focused
+  commands and their coverage are documented in `tool/README.md`.
 - Manual testing is done by running the game in a browser and exercising the scenario flow.
 - Runtime debug entrypoints are documented in `tool/README.md`.
 - The root `data/others/debug_menu.js` is currently a legacy/reference copy; the

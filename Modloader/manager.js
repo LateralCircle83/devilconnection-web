@@ -306,7 +306,9 @@ document.addEventListener('DOMContentLoaded', function() {
     var html = ''
     for (var i = 0; i < mods.length; i++) {
       var m = mods[i]
-      var checked = Object.prototype.hasOwnProperty.call(checkedState, m.id) ? checkedState[m.id] : true
+      var checked = Object.prototype.hasOwnProperty.call(checkedState, m.id)
+        ? checkedState[m.id]
+        : m.defaultEnabled !== false
       html +=
         '<div class="mod-item" data-id="' + esc(m.id) + '">' +
         '<span class="drag-handle">☰☰</span>' +

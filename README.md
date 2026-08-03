@@ -29,12 +29,13 @@
 ## 快速开始
 
 ```bash
-npm install
 npm run serve
 # 浏览器打开 http://localhost:3000
 ```
 
 启动后可在模组选择页勾选要加载的模组，点「开始游戏」进入。
+
+如果启动加载速度过慢或资源显示异常，可在模组选择页尝试启用默认关闭的「兼容型动画懒加载」。
 
 ## 目录结构
 
@@ -63,14 +64,10 @@ npm run check
 
 ## 模组
 
-模组规格遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。
+- **仓库模组**：将 `.asar` 放入 `mods/`，并在 [`mods/mods.json`](mods/mods.json) 注册
+- **本地模组**：在模组选择页点「+ 添加模组」临时加载，刷新后失效
 
-## 模组加载方式
-
-1. **服务端模组**：将 `.asar` 放入 `mods/` 目录，在 `mods/mods.json` 注册，页面刷新后出现在模组列表
-2. **本地加载**：在模组选择页点「+ 加载本地 ASAR」，选择 `.asar` 文件临时加载（刷新后消失）
-
-当前内置模组列表以 [`mods/mods.json`](mods/mods.json) 为准。模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)，模组开发请遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。加密模组（`DC_ENC_v1`）排查工具见 [`tool/README.md`](tool/README.md)。
+当前内置模组列表以 [`mods/mods.json`](mods/mods.json) 为准。模组加载器参考自 [DevilConnection_ModLoader (Rebuild)](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader)，模组开发请遵循 [DCML Rebuild 规范](https://github.com/Luoyu-Wangchai/DevilConnection_ModLoader/blob/main/ModsUsage.md)。加密模组排查工具见 [`tool/README.md`](tool/README.md)。
 
 ## 许可证与声明
 
