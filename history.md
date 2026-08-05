@@ -300,3 +300,9 @@
 - `title_screen.ks` 的 `sf.kill>0` 分支会在普通标题路径隐藏加载层之前跳到 `*kill`，导致引擎资源加载条一直保留
 - 禁忌标题入口现在显式调用 `TYRANO.hideLoadingOverlay()`；普通标题执行顺序不变，隐藏操作也没有提前到自动读档判断之前
 - `startup_self_check.mjs` 新增标题场景检查，确保普通与禁忌入口都会在显示共用标题控件前收起加载层
+
+## 2026-08-06
+
+### 维护：停止自动部署 GitHub Pages
+- 删除唯一的 GitHub Actions 工作流 `static.yml`，后续推送到 `main` 不再自动触发 Pages 部署
+- 此变更不会自动取消已经运行或排队的任务，也不会删除此前已部署的 Pages 内容
