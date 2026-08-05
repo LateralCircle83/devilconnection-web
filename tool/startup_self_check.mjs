@@ -11,6 +11,7 @@ const electronLatestSource = fs.readFileSync(path.join(repoRoot, 'BrowserShell',
 const lzStringSource = fs.readFileSync(path.join(repoRoot, 'tyrano', 'libs', 'lz-string.min.js'), 'utf8')
 const managerSource = fs.readFileSync(path.join(repoRoot, 'Modloader', 'manager.js'), 'utf8')
 const markdownViewerSource = fs.readFileSync(path.join(repoRoot, 'Modloader', 'markdown_viewer.js'), 'utf8')
+const titleScreenSource = fs.readFileSync(path.join(repoRoot, 'data', 'scenario', 'title_screen.ks'), 'utf8')
 
 async function runTests(tests) {
   for (const [name, test] of tests) {
@@ -1368,10 +1369,46 @@ const markdownTests = [
   ['code-formatted link labels render correctly', testMarkdownCodeLinkLabels],
 ]
 
+function getScenarioLabelBlock(source, label) {
+  const lines = source.split(/\r?\n/)
+  const start = lines.findIndex((line) => line.trim() === `*${label}`)
+  assert.notEqual(start, -1, `missing scenario label: *${label}`)
+
+  let end = lines.length
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (/^\*\S+/.test(lines[index].trim())) {
+      end = index
+      break
+    }
+  }
+  return lines.slice(start, end).join('\n')
+}
+
+async function testTitleRoutesHideLoadingOverlay() {
+  const firstLabelIndex = titleScreenSource.search(/^\*\S+/m)
+  assert.notEqual(firstLabelIndex, -1, 'title scenario has no labels')
+
+  const normalEntry = titleScreenSource.slice(0, firstLabelIndex)
+  const tabooEntry = getScenarioLabelBlock(titleScreenSource, 'kill')
+  const hideOverlayTag = /\[eval\s+exp="TYRANO\.hideLoadingOverlay\(\)"\s*\]/
+
+  assert.match(normalEntry, hideOverlayTag, 'normal title entry must hide the loading overlay')
+  assert.match(tabooEntry, hideOverlayTag, 'taboo title entry must hide the loading overlay')
+  assert.ok(
+    tabooEntry.indexOf('TYRANO.hideLoadingOverlay()') < tabooEntry.indexOf('target="*clickable"'),
+    'taboo title must hide the overlay before handing off to the shared title controls',
+  )
+}
+
+const scenarioTests = [
+  ['normal and taboo title entries hide the loading overlay', testTitleRoutesHideLoadingOverlay],
+]
+
 const suites = {
   'browser-shell': browserShellTests,
   manager: managerTests,
   markdown: markdownTests,
+  scenario: scenarioTests,
 }
 
 const requestedSuites = process.argv.slice(2)

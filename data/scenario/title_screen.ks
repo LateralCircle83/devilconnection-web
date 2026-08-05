@@ -209,6 +209,8 @@ else if (navigator.app) navigator.app.exitApp()
 [tb_autoload  title="b"  ]
 *kill
 
+[eval exp="TYRANO.hideLoadingOverlay()"]
+
 [free_layermode  time="0"  wait="false"  ]
 [free_layermode  time="0"  wait="false"  name="1"  ]
 [flash_off  time="1000"  wait="false"]

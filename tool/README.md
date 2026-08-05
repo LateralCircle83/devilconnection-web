@@ -16,7 +16,7 @@ self-checks below. Run an individual script only when narrowing down a failure.
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage/save regressions and manager startup, archive, Markdown, and input-scroll checks. Pass `browser-shell`, `manager`, or `markdown` to run one suite. |
+| `startup_self_check.mjs` | `npm run check:startup` | Runs BrowserShell storage/save regressions, manager startup/archive, Markdown/input-scroll, and title-route scenario checks. Pass `browser-shell`, `manager`, `markdown`, or `scenario` to run one suite. |
 | `modloader_self_check.mjs` | `npm run check:modloader` | Runs the real loader in a browser-like VM and checks ASAR validation, failure rollback/retry, repeated initialization, and interceptor semantics. |
 | `safe_apng_self_check.mjs` | `npm run check:apng` | Executes the APNG loader directly from its ASAR and checks lazy/eager behavior, retry, deduplication, repeated loading, theatre curtains, preload budget, and package layout. |
 | `check_css.mjs` | `node tool/check_css.mjs` | Checks whether manager UI classes used in `index.html` and `Modloader/manager.js` templates have matching selectors in `Modloader/manager.css`. This is only a rough UI sanity check. |
